@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order Confirmed — JET</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --myntra-pink: #ff3f6c; --myntra-dark: #282c3f; --myntra-gray: #f5f5f6; }
+    body { background: var(--myntra-gray); font-family: 'Segoe UI', sans-serif; }
+    .navbar { background: #fff !important; border-bottom: 1px solid #eee; }
+    .navbar-brand { font-weight: 900; font-size: 1.6rem; color: var(--myntra-pink) !important; letter-spacing: 2px; }
+    .btn-myntra { background: var(--myntra-pink); color: #fff; border: none; font-weight: 700; border-radius: 4px; }
+    .btn-myntra:hover { background: #e0355f; color: #fff; }
+    .confirm-icon { font-size: 5rem; color: #03a685; }
+    .card { border: none; border-radius: 12px; }
+    .order-item-img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">JET</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <li class="nav-item"><span class="nav-link fw-semibold" style="color:var(--myntra-pink)">Hi, {{ user.username }}</span></li>
+        <li class="nav-item"><a class="btn btn-myntra btn-sm px-3" href="{% url 'logout' %}">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-5" style="max-width:680px">
+
+  <!-- Success Banner -->
+  <div class="text-center mb-4">
+    <i class="bi bi-check-circle-fill confirm-icon"></i>
+    <h3 class="fw-bold mt-3" style="color:var(--myntra-dark)">Order Placed Successfully!</h3>
+    <p class="text-muted">Thank you for shopping with JET. Your order is confirmed.</p>
+    <span class="badge fs-6 px-3 py-2" style="background:#fff0f3;color:var(--myntra-pink)">Order #{{ order.id }}</span>
+  </div>
+
+  <!-- Order Details -->
+  <div class="card shadow-sm p-4 mb-4">
+    <h6 class="fw-bold mb-3" style="color:var(--myntra-dark)">Order Details</h6>
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Order ID</span>
+      <span class="fw-semibold">#{{ order.id }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Status</span>
+      <span class="badge bg-warning text-dark">{{ order.status|title }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Date</span>
+      <span class="fw-semibold">{{ order.created_at|date:"d M Y" }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span class="text-muted">Total Amount</span>
+      <span class="fw-bold" style="color:var(--myntra-pink)">₹{{ order.total_price }}</span>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="card shadow-sm p-4 mb-4">
+    <h6 class="fw-bold mb-3" style="color:var(--myntra-dark)">Items Ordered</h6>
+    {% for item in order.items.all %}
+    <div class="d-flex align-items-center gap-3 mb-3">
+      {% if item.product.image %}
+        <img src="{{ item.product.image.url }}" class="order-item-img" alt="{{ item.product.name }}">
+      {% else %}
+        <div class="order-item-img d-flex align-items-center justify-content-center bg-light rounded">
+          <i class="bi bi-image text-secondary"></i>
+        </div>
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="fw-semibold">{{ item.product.name }}</div>
+        <div class="small text-muted">Qty: {{ item.quantity }} × ₹{{ item.price }}</div>
+      </div>
+      <div class="fw-bold" style="color:var(--myntra-pink)">₹{{ item.subtotal }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Shipping Address -->
+  {% if order.shipping_address %}
+  <div class="card shadow-sm p-4 mb-4">
+    <h6 class="fw-bold mb-3" style="color:var(--myntra-dark)">Delivery Address</h6>
+    <p class="mb-1 fw-semibold">{{ order.shipping_address.full_name }}</p>
+    <p class="mb-1 text-muted">{{ order.shipping_address.address }}</p>
+    <p class="mb-1 text-muted">{{ order.shipping_address.city }}, {{ order.shipping_address.state }} — {{ order.shipping_address.zipcode }}</p>
+    <p class="mb-0 text-muted">{{ order.shipping_address.country }}</p>
+    {% if order.shipping_address.phone %}
+    <p class="mb-0 text-muted"><i class="bi bi-telephone"></i> {{ order.shipping_address.phone }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-3">
+    <a href="{% url 'home' %}" class="btn btn-myntra flex-fill btn-lg">Continue Shopping</a>
+  </div>
+
+</div>
+
+<footer class="py-3 mt-5" style="background:var(--myntra-dark);color:#aaa">
+  <p class="text-center mb-0 small">© 2026 JET. All rights reserved.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

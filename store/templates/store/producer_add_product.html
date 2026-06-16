@@ -1,0 +1,111 @@
+{% extends 'store/base.html' %}
+{% block title %}Add Product — Seller Studio{% endblock %}
+
+{% block extra_style %}
+.page-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.page-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.form-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 32px; }
+.form-label { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
+.form-control, .form-select { border-radius: 10px; border-color: var(--jet-border); }
+.gallery-preview { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.gallery-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid var(--jet-border); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="max-width:700px">
+    <h1>📦 Add New Product</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">List a new product in your Seller Studio</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:700px">
+  <div class="form-card">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-danger" style="border-radius:10px">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Product Name *</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Category *</label>
+        <select name="category" class="form-select" required>
+          <option value="">Select category</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Price (₹) *</label>
+          <input type="number" name="price" class="form-control" step="0.01" min="0" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Stock</label>
+          <input type="number" name="stock" class="form-control" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Cover Image</label>
+        <input type="file" name="image" class="form-control" accept="image/*" id="coverInput">
+        <div class="gallery-preview" id="coverPreview"></div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Additional Photos (gallery — select multiple)</label>
+        <input type="file" name="gallery_images" class="form-control" accept="image/*" multiple id="galleryInput">
+        <small style="color:var(--jet-muted)">You can select multiple images at once.</small>
+        <div class="gallery-preview" id="galleryPreview"></div>
+      </div>
+
+      <button type="submit" class="btn-jet w-100" style="padding:12px;cursor:pointer">
+        <i class="bi bi-plus-lg"></i> Add Product
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_script %}
+<script>
+function previewImages(input, previewId) {
+  const preview = document.getElementById(previewId);
+  preview.innerHTML = '';
+  if (input.files) {
+    [...input.files].forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
+document.getElementById('coverInput').addEventListener('change', function() {
+  previewImages(this, 'coverPreview');
+});
+document.getElementById('galleryInput').addEventListener('change', function() {
+  previewImages(this, 'galleryPreview');
+});
+</script>
+{% endblock %}

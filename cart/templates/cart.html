@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Cart</title>
+
+    <style>
+
+        body{
+            font-family:Arial;
+            background:#f5f5f6;
+            padding:40px;
+        }
+
+        .box{
+            background:white;
+            padding:20px;
+            margin-bottom:20px;
+            border-radius:10px;
+        }
+
+        .total{
+            font-size:25px;
+            font-weight:bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h1>Your Cart 🛒</h1>
+
+{% for item in cart_items %}
+
+<div class="box">
+
+    <h2>{{ item.product.name }}</h2>
+
+    <p>Price: ₹{{ item.product.price }}</p>
+
+    <p>Quantity: {{ item.quantity }}</p>
+
+</div>
+
+{% endfor %}
+
+<div class="total">
+
+    Total Amount: ₹{{ total }}
+
+</div>
+
+</body>
+
+</html>

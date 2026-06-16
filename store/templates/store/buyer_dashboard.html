@@ -1,0 +1,203 @@
+{% extends 'store/base.html' %}
+{% block title %}Consumer Dashboard — JET{% endblock %}
+
+{% block extra_style %}
+.dash-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.dash-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -1px; }
+.stat-card { background: #fff; border-radius: 14px; padding: 20px 24px; border: 1px solid var(--jet-border); }
+.stat-number { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--jet-muted); }
+.tab-bar { display: flex; border-bottom: 1px solid var(--jet-border); background: #fff; overflow-x: auto; }
+.tab-btn { padding: 14px 24px; border: none; background: none; font-family: var(--font-body); font-weight: 600; font-size: 0.88rem; color: var(--jet-muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.tab-btn.active { color: var(--jet-black); border-bottom-color: var(--jet-black); }
+.order-row { padding: 16px 20px; border-bottom: 1px solid var(--jet-border); }
+.track-step { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 100px; }
+.track-step.done { background: #e8f5e9; color: #2e7d32; }
+.track-step.pending { background: var(--jet-gray); color: #aaa; }
+.section-box { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); overflow: hidden; }
+.prod-card { background: #fff; border-radius: 12px; border: 1px solid var(--jet-border); overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+.prod-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.prod-img { height: 180px; object-fit: cover; width: 100%; }
+.prod-img-placeholder { height: 180px; display: flex; align-items: center; justify-content: center; background: var(--jet-gray); }
+{% endblock %}
+
+{% block content %}
+
+<div class="dash-header">
+  <div class="container" style="max-width:1400px">
+    <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Consumer Dashboard</div>
+    <h1>Hello, {{ user.username }} 👋</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">Manage your orders, browse products and wishlist</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1400px">
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">🛍️</div>
+        <div class="stat-number">{{ orders|length }}</div>
+        <div class="stat-label">Total Orders</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">❤️</div>
+        <div class="stat-number">{{ wishlist|length }}</div>
+        <div class="stat-label">Wishlist Items</div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">🏪</div>
+        {% if user.profile.is_producer %}
+          <div class="stat-number" style="font-size:1rem;color:#2e7d32">Active Seller ✓</div>
+          <a href="{% url 'producer_dashboard' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px;font-size:0.82rem;padding:6px 14px">Go to Seller Studio</a>
+        {% else %}
+          <div class="stat-number" style="font-size:1rem">Not a Seller</div>
+          <a href="{% url 'become_producer' %}" class="btn-jet-dark" style="text-decoration:none;display:inline-block;margin-top:8px;font-size:0.82rem;padding:6px 14px">Start Selling Free</a>
+        {% endif %}
+        <div class="stat-label mt-1">Seller Status</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="section-box">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('orders', this)">📦 My Orders</button>
+      <button class="tab-btn" onclick="showTab('products', this)">🛒 Browse Products</button>
+      <button class="tab-btn" onclick="showTab('wishlist', this)">❤️ Wishlist</button>
+    </div>
+
+    <!-- Orders Tab -->
+    <div id="tab-orders">
+      {% if orders %}
+        {% for order in orders %}
+        <div class="order-row">
+          <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+            <div>
+              <span style="font-family:var(--font-display);font-weight:700">Order #{{ order.id }}</span>
+              <span style="color:var(--jet-muted);font-size:0.8rem;margin-left:8px">{{ order.created_at|date:"d M Y" }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span style="background:{% if order.status == 'delivered' %}#e8f5e9;color:#2e7d32{% elif order.status == 'shipped' %}#e3f2fd;color:#1565c0{% elif order.status == 'cancelled' %}#ffebee;color:#c62828{% else %}#fff8e1;color:#f57f17{% endif %};padding:4px 12px;border-radius:100px;font-size:0.75rem;font-weight:700">
+                {{ order.status|title }}
+              </span>
+              <a href="{% url 'order_tracking' order.id %}" class="btn-jet" style="text-decoration:none;padding:4px 12px;font-size:0.75rem">
+                🔍 Track
+              </a>
+            </div>
+          </div>
+
+          <!-- Tracking Steps -->
+          <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+            <span class="track-step done">✓ Ordered</span>
+            <span style="color:#ccc;font-size:0.7rem">›</span>
+            <span class="track-step {% if order.status in 'processing,shipped,delivered' %}done{% else %}pending{% endif %}">✓ Processing</span>
+            <span style="color:#ccc;font-size:0.7rem">›</span>
+            <span class="track-step {% if order.status in 'shipped,delivered' %}done{% else %}pending{% endif %}">✓ Shipped</span>
+            <span style="color:#ccc;font-size:0.7rem">›</span>
+            <span class="track-step {% if order.status == 'delivered' %}done{% else %}pending{% endif %}">✓ Delivered</span>
+          </div>
+
+          {% for item in order.items.all %}
+          <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:0.85rem">
+            <span style="color:#555">{{ item.product.name }} <span style="color:#aaa">×{{ item.quantity }}</span></span>
+            <span style="font-weight:700;color:var(--jet-accent)">₹{{ item.subtotal }}</span>
+          </div>
+          {% endfor %}
+
+          <div style="border-top:1px solid var(--jet-border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between">
+            <span style="font-size:0.83rem;color:var(--jet-muted)">Order Total</span>
+            <span style="font-family:var(--font-display);font-weight:700">₹{{ order.total_price }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-5">
+          <div style="font-size:3rem">🛍️</div>
+          <h6 style="font-family:var(--font-display);margin-top:12px">No orders yet</h6>
+          <a href="{% url 'home' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px">Browse Products</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Products Tab -->
+    <div id="tab-products" style="display:none;padding:20px">
+      <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:16px">All Available Products</h6>
+      {% if all_products %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px">
+        {% for product in all_products %}
+        <div class="prod-card">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="prod-img" alt="{{ product.name }}">
+          {% else %}
+            <div class="prod-img-placeholder">
+              <i class="bi bi-image" style="font-size:2rem;color:#ccc"></i>
+            </div>
+          {% endif %}
+          <div style="padding:12px">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--jet-accent)">{{ product.category.name }}</div>
+            <div style="font-weight:600;font-size:0.88rem;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ product.name }}</div>
+            <div style="font-family:var(--font-display);font-weight:700;color:var(--jet-black)">₹{{ product.price }}</div>
+            {% if product.producer %}
+            <div style="font-size:0.72rem;color:var(--jet-muted);margin-top:2px">by {{ product.producer.username }}</div>
+            {% endif %}
+            <a href="{% url 'product_detail' product.slug %}" class="btn-jet" style="display:block;text-align:center;text-decoration:none;padding:7px;font-size:0.8rem;margin-top:8px">View Product</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="text-center py-4 text-muted">No products available yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- Wishlist Tab -->
+    <div id="tab-wishlist" style="display:none;padding:20px">
+      {% if wishlist %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px">
+          {% for item in wishlist %}
+          <div style="background:var(--jet-gray);border-radius:12px;overflow:hidden;border:1px solid var(--jet-border)">
+            {% if item.product.image %}
+              <img src="{{ item.product.image.url }}" style="width:100%;height:140px;object-fit:cover">
+            {% else %}
+              <div style="height:140px;display:flex;align-items:center;justify-content:center;background:#eee">
+                <i class="bi bi-image" style="font-size:2rem;color:#ccc"></i>
+              </div>
+            {% endif %}
+            <div style="padding:10px">
+              <div style="font-weight:600;font-size:0.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.product.name }}</div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:0.9rem;color:var(--jet-accent);margin:2px 0">₹{{ item.product.price }}</div>
+              <a href="{% url 'product_detail' item.product.slug %}" style="display:block;text-align:center;background:var(--jet-black);color:#fff;border-radius:8px;padding:6px;font-size:0.78rem;font-weight:600;text-decoration:none;margin-top:6px">View</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <div style="font-size:3rem">❤️</div>
+          <h6 style="font-family:var(--font-display);margin-top:12px">Wishlist is empty</h6>
+          <a href="{% url 'home' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px">Discover Products</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+function showTab(tab, btn) {
+  document.getElementById('tab-orders').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('tab-products').style.display = tab === 'products' ? 'block' : 'none';
+  document.getElementById('tab-wishlist').style.display = tab === 'wishlist' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

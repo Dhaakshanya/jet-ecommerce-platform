@@ -1,0 +1,50 @@
+{% extends 'store/base.html' %}
+{% block title %}Cancel Order #{{ order.id }} — JET{% endblock %}
+
+{% block extra_style %}
+.page-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.page-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.jet-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 24px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="max-width:600px">
+    <h1>❌ Cancel Order</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">Order #{{ order.id }}</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:600px">
+  <div class="jet-card text-center">
+    <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+    <h4 style="font-family:var(--font-display);font-weight:800">Are you sure?</h4>
+    <p style="color:var(--jet-muted);margin-top:8px;font-size:0.9rem">
+      You are about to cancel <strong>Order #{{ order.id }}</strong> worth <strong>₹{{ order.total_price }}</strong>. This action cannot be undone.
+    </p>
+
+    <!-- Order items summary -->
+    <div style="background:var(--jet-gray);border-radius:10px;padding:16px;margin:16px 0;text-align:left">
+      {% for item in order.items.all %}
+      <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem">
+        <span>{{ item.product.name }} × {{ item.quantity }}</span>
+        <span style="font-weight:700">₹{{ item.subtotal }}</span>
+      </div>
+      {% endfor %}
+      <hr style="border-color:var(--jet-border)">
+      <div class="d-flex justify-content-between">
+        <span style="font-weight:700">Total</span>
+        <span style="font-weight:800;color:var(--jet-accent)">₹{{ order.total_price }}</span>
+      </div>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="d-flex gap-3 mt-3">
+        <a href="{% url 'order_tracking' order.id %}" class="btn-jet-outline" style="text-decoration:none;flex:1;padding:12px;text-align:center">← Go Back</a>
+        <button type="submit" class="btn-jet" style="flex:1;padding:12px;cursor:pointer;background:#c62828">Yes, Cancel Order</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

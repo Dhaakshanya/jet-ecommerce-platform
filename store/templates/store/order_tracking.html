@@ -1,0 +1,204 @@
+{% extends 'store/base.html' %}
+{% block title %}Track Order #{{ order.id }} — JET{% endblock %}
+
+{% block extra_style %}
+.track-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.track-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; letter-spacing: -1px; }
+.jet-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 24px; }
+.progress-bar-wrap { display: flex; justify-content: space-between; align-items: flex-start; position: relative; margin: 24px 0; }
+.progress-bar-wrap::before { content: ''; position: absolute; top: 20px; left: 10%; right: 10%; height: 3px; background: var(--jet-border); z-index: 0; }
+.progress-fill { position: absolute; top: 20px; left: 10%; height: 3px; background: var(--jet-accent); z-index: 1; transition: width 0.5s; }
+.progress-step { display: flex; flex-direction: column; align-items: center; z-index: 2; flex: 1; }
+.step-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.step-circle.done { background: #2e7d32; color: #fff; }
+.step-circle.active { background: var(--jet-accent); color: #fff; }
+.step-circle.pending { background: #fff; color: #ccc; border-color: var(--jet-border); }
+.step-label { font-size: 0.75rem; font-weight: 700; margin-top: 8px; text-align: center; }
+.step-label.done { color: #2e7d32; }
+.step-label.active { color: var(--jet-accent); }
+.step-label.pending { color: #aaa; }
+.history-line { position: relative; padding-left: 32px; }
+.history-line::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--jet-border); }
+.history-item { position: relative; margin-bottom: 20px; }
+.history-item:last-child { margin-bottom: 0; }
+.history-dot { position: absolute; left: -26px; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px var(--jet-border); }
+.history-dot.done { background: #2e7d32; box-shadow: 0 0 0 2px #2e7d32; }
+.history-dot.active { background: var(--jet-accent); box-shadow: 0 0 0 2px var(--jet-accent); }
+.history-status { font-weight: 700; font-size: 0.9rem; }
+.history-message { font-size: 0.82rem; color: var(--jet-muted); margin-top: 2px; }
+.history-time { font-size: 0.75rem; color: #bbb; margin-top: 4px; }
+.history-time span { margin-right: 10px; }
+{% endblock %}
+
+{% block content %}
+
+<div class="track-header">
+  <div class="container" style="max-width:900px">
+    <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Order Tracking</div>
+    <h1>Order #{{ order.id }}</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">
+      Placed on {{ order.created_at|date:"l, d F Y" }} at {{ order.created_at|date:"H:i" }}
+    </p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:900px">
+
+  <!-- Status Banner -->
+  <div class="jet-card mb-4 text-center">
+    <div style="font-size:2.5rem;margin-bottom:8px">
+      {% if order.status == 'delivered' %}✅
+      {% elif order.status == 'shipped' %}🚚
+      {% elif order.status == 'processing' %}⚙️
+      {% elif order.status == 'cancelled' %}❌
+      {% else %}📦{% endif %}
+    </div>
+    <h4 style="font-family:var(--font-display);font-weight:800">
+      {% if order.status == 'delivered' %}Your order has been delivered!
+      {% elif order.status == 'shipped' %}Your order is on the way!
+      {% elif order.status == 'processing' %}Your order is being processed
+      {% elif order.status == 'cancelled' %}Order cancelled
+      {% else %}Order placed successfully{% endif %}
+    </h4>
+    <p style="color:var(--jet-muted);font-size:0.85rem;margin-top:4px">
+      Last updated: <strong>{{ order.updated_at|date:"l, d F Y" }}</strong> at <strong>{{ order.updated_at|date:"H:i" }}</strong>
+    </p>
+  </div>
+
+  {% if order.status != 'cancelled' %}
+  <!-- Progress Bar -->
+  <div class="jet-card mb-4">
+    <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:24px">Order Progress</h6>
+    <div class="progress-bar-wrap">
+      <div class="progress-fill" style="width:{% if current_index == 0 %}0%{% elif current_index == 1 %}33%{% elif current_index == 2 %}66%{% else %}100%{% endif %}"></div>
+      {% for stage in stages %}
+      <div class="progress-step">
+        <div class="step-circle {% if forloop.counter0 < current_index %}done{% elif forloop.counter0 == current_index %}active{% else %}pending{% endif %}">
+          {% if forloop.counter0 < current_index %}✓
+          {% elif stage == 'pending' %}📦
+          {% elif stage == 'processing' %}⚙
+          {% elif stage == 'shipped' %}🚚
+          {% else %}🏠{% endif %}
+        </div>
+        <div class="step-label {% if forloop.counter0 < current_index %}done{% elif forloop.counter0 == current_index %}active{% else %}pending{% endif %}">
+          {{ stage|title }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+
+    <!-- Tracking History -->
+    <div class="col-md-7">
+      <div class="jet-card">
+        <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:20px">📋 Tracking History</h6>
+        {% if tracking_history %}
+        <div class="history-line">
+          {% for track in tracking_history %}
+          <div class="history-item">
+            <div class="history-dot {% if track.status == order.status %}active{% else %}done{% endif %}"></div>
+            <div class="history-status">{{ track.status|title }}</div>
+            <div class="history-message">{{ track.message }}</div>
+            <div class="history-time">
+              <span>📅 {{ track.timestamp|date:"l" }}</span>
+              <span>🗓 {{ track.timestamp|date:"d F Y" }}</span>
+              <span>🕐 {{ track.timestamp|date:"H:i" }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--jet-muted);font-size:0.85rem">No tracking history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right side -->
+    <div class="col-md-5">
+
+      <!-- Order Items -->
+      <div class="jet-card mb-3">
+        <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:16px">Items Ordered</h6>
+        {% for item in order.items.all %}
+        <div class="d-flex align-items-center gap-3 mb-3">
+          {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" style="width:50px;height:50px;object-fit:cover;border-radius:8px">
+          {% else %}
+            <div style="width:50px;height:50px;background:var(--jet-gray);border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <i class="bi bi-image text-muted"></i>
+            </div>
+          {% endif %}
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.85rem">{{ item.product.name }}</div>
+            <div style="font-size:0.78rem;color:var(--jet-muted)">Qty: {{ item.quantity }} × ₹{{ item.price }}</div>
+          </div>
+          <div style="font-weight:700;color:var(--jet-accent);font-size:0.88rem">₹{{ item.subtotal }}</div>
+        </div>
+        {% endfor %}
+        <hr style="border-color:var(--jet-border)">
+        <div class="d-flex justify-content-between">
+          <span style="font-weight:600">Total</span>
+          <span style="font-family:var(--font-display);font-weight:800">₹{{ order.total_price }}</span>
+        </div>
+      </div>
+
+      <!-- Delivery Address -->
+      {% if order.shipping_address %}
+      <div class="jet-card mb-3">
+        <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:12px">Delivery Address</h6>
+        <p style="font-weight:700;margin-bottom:4px;font-size:0.88rem">{{ order.shipping_address.full_name }}</p>
+        <p style="color:var(--jet-muted);font-size:0.82rem;margin-bottom:2px">{{ order.shipping_address.address }}</p>
+        <p style="color:var(--jet-muted);font-size:0.82rem;margin-bottom:2px">{{ order.shipping_address.city }}, {{ order.shipping_address.state }} — {{ order.shipping_address.zipcode }}</p>
+        {% if order.shipping_address.phone %}
+        <p style="color:var(--jet-muted);font-size:0.82rem"><i class="bi bi-telephone"></i> {{ order.shipping_address.phone }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-column gap-2">
+
+        {% if order.status == 'pending' %}
+        <!-- Direct cancel for pending orders -->
+        <a href="{% url 'direct_cancel_order' order.id %}" style="display:block;text-align:center;padding:10px;font-size:0.85rem;font-weight:700;background:#ffebee;color:#c62828;border-radius:10px;text-decoration:none;border:1.5px solid #ffcdd2">
+          ❌ Cancel Order Instantly
+        </a>
+        {% elif order.status in 'processing,shipped' and not existing_request %}
+        <!-- Request cancel for processing/shipped -->
+        <a href="{% url 'cancel_return_request' order.id %}" class="btn-jet-outline" style="text-decoration:none;text-align:center;padding:10px;font-size:0.85rem;color:var(--jet-accent);border-color:var(--jet-accent)">
+          ❌ Request Cancellation
+        </a>
+        {% elif order.status == 'delivered' and not existing_request %}
+        <!-- Return request for delivered orders -->
+        <a href="{% url 'cancel_return_request' order.id %}" class="btn-jet-outline" style="text-decoration:none;text-align:center;padding:10px;font-size:0.85rem;color:#1565c0;border-color:#1565c0">
+          ↩️ Request Return
+        </a>
+        {% endif %}
+
+        <!-- Show existing request status -->
+        {% if existing_request %}
+        <div style="background:#fff8e1;border-radius:10px;padding:12px;text-align:center;font-size:0.82rem;font-weight:600;color:#f57f17">
+          ⏳ {{ existing_request.request_type|title }} request is <strong>{{ existing_request.status|title }}</strong>
+          {% if existing_request.producer_note %}
+          <div style="margin-top:4px;font-weight:400;color:#888">"{{ existing_request.producer_note }}"</div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <a href="{% url 'download_invoice' order.id %}" class="btn-jet-outline" style="text-decoration:none;text-align:center;padding:10px;font-size:0.85rem">
+          📄 Download Invoice (PDF)
+        </a>
+
+        <div class="d-flex gap-2">
+          <a href="{% url 'buyer_dashboard' %}" class="btn-jet-outline" style="text-decoration:none;flex:1;text-align:center;padding:10px;font-size:0.85rem">← Back</a>
+          <a href="{% url 'home' %}" class="btn-jet" style="text-decoration:none;flex:1;text-align:center;padding:10px;font-size:0.85rem">Shop More</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

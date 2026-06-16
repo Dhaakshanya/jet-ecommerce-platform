@@ -1,0 +1,130 @@
+{% extends 'store/base.html' %}
+{% block title %}Edit Product — Seller Studio{% endblock %}
+
+{% block extra_style %}
+.page-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.page-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.form-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 32px; }
+.form-label { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
+.form-control, .form-select { border-radius: 10px; border-color: var(--jet-border); }
+.gallery-preview { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.gallery-preview img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid var(--jet-border); }
+.gallery-item { position: relative; }
+.gallery-item img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid var(--jet-border); }
+.gallery-item label { position: absolute; top: -6px; right: -6px; background: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; }
+.gallery-item input[type="checkbox"] { accent-color: var(--jet-accent); width: 14px; height: 14px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="max-width:700px">
+    <h1>✏️ Edit Product</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">{{ product.name }}</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:700px">
+  <div class="form-card">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-danger" style="border-radius:10px">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Product Name</label>
+        <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if product.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3">{{ product.description }}</textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Price (₹)</label>
+          <input type="number" name="price" class="form-control" step="0.01" value="{{ product.price }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Stock</label>
+          <input type="number" name="stock" class="form-control" value="{{ product.stock }}">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Cover Image</label>
+        {% if product.image %}
+          <div class="mb-2"><img src="{{ product.image.url }}" style="height:80px;border-radius:8px" alt="current"></div>
+        {% endif %}
+        <input type="file" name="image" class="form-control" accept="image/*">
+        <small style="color:var(--jet-muted)">Leave blank to keep current cover image</small>
+      </div>
+
+      <!-- Existing Gallery Images -->
+      {% if gallery_images %}
+      <div class="mb-3">
+        <label class="form-label">Additional Photos (check to remove)</label>
+        <div class="gallery-preview">
+          {% for img in gallery_images %}
+          <div class="gallery-item">
+            <img src="{{ img.image.url }}" alt="gallery">
+            <label title="Remove this image">
+              <input type="checkbox" name="delete_images" value="{{ img.id }}">
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mb-4">
+        <label class="form-label">Add More Photos</label>
+        <input type="file" name="gallery_images" class="form-control" accept="image/*" multiple id="galleryInput">
+        <small style="color:var(--jet-muted)">You can select multiple images at once.</small>
+        <div class="gallery-preview" id="galleryPreview"></div>
+      </div>
+
+      <div class="mb-4 form-check">
+        <input type="checkbox" name="is_available" class="form-check-input" id="is_available" {% if product.is_available %}checked{% endif %}>
+        <label class="form-check-label" for="is_available" style="font-weight:600">Available for sale</label>
+      </div>
+
+      <button type="submit" class="btn-jet w-100" style="padding:12px;cursor:pointer">
+        <i class="bi bi-save"></i> Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+document.getElementById('galleryInput').addEventListener('change', function() {
+  const preview = document.getElementById('galleryPreview');
+  preview.innerHTML = '';
+  [...this.files].forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script>
+{% endblock %}

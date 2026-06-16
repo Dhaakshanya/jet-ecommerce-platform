@@ -1,0 +1,87 @@
+{% extends 'store/base.html' %}
+{% block title %}Payment — JET{% endblock %}
+
+{% block extra_style %}
+.pay-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.pay-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.jet-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 32px; text-align: center; }
+{% endblock %}
+
+{% block content %}
+<div class="pay-header">
+  <div class="container" style="max-width:600px">
+    <h1>💳 Complete Payment</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">Order #{{ order.id }}</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:600px">
+  <div class="jet-card">
+    <div style="font-size:3rem;margin-bottom:12px">🔒</div>
+    <h5 style="font-family:var(--font-display);font-weight:800">Secure Payment</h5>
+    <p style="color:var(--jet-muted);font-size:0.9rem;margin:8px 0 20px">
+      Pay ₹{{ order.total_price }} via UPI, Card, Netbanking, or Wallet
+    </p>
+
+    <button id="payBtn" class="btn-jet" style="padding:14px 32px;font-size:1rem;cursor:pointer">
+      Pay ₹{{ order.total_price }} Now
+    </button>
+
+    <p style="font-size:0.78rem;color:var(--jet-muted);margin-top:16px">
+      Powered by Razorpay · Test Mode
+    </p>
+
+    <a href="{% url 'buyer_dashboard' %}" class="btn-jet-outline" style="text-decoration:none;display:block;margin-top:16px;padding:10px">
+      Cancel and go back
+    </a>
+  </div>
+</div>
+
+<!-- Hidden form to submit verification data -->
+<form id="verifyForm" method="POST" action="{% url 'verify_payment' order.id %}" style="display:none">
+  {% csrf_token %}
+  <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+  <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+  <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+</form>
+
+{% endblock %}
+
+{% block extra_script %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('payBtn').addEventListener('click', function () {
+  var options = {
+    "key": "{{ razorpay_key }}",
+    "amount": "{{ amount }}",
+    "currency": "INR",
+    "name": "JET Marketplace",
+    "description": "Order #{{ order.id }}",
+    "order_id": "{{ razorpay_order_id }}",
+    "handler": function (response) {
+      document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+      document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+      document.getElementById('razorpay_signature').value = response.razorpay_signature;
+      document.getElementById('verifyForm').submit();
+    },
+    "prefill": {
+      "name": "{{ request.user.username }}",
+      "email": "{{ request.user.email }}"
+    },
+    "theme": {
+      "color": "#ff3b5c"
+    },
+    "modal": {
+      "ondismiss": function() {
+        console.log('Payment popup closed by user');
+      }
+    }
+  };
+  var rzp = new Razorpay(options);
+  rzp.on('payment.failed', function (response) {
+    alert('Payment failed: ' + response.error.description);
+  });
+  rzp.open();
+});
+</script>
+{% endblock %}

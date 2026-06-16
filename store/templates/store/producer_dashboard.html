@@ -1,0 +1,249 @@
+{% extends 'store/base.html' %}
+{% block title %}Seller Studio — JET{% endblock %}
+
+{% block extra_style %}
+.studio-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.studio-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -1px; }
+.stat-card { background: #fff; border-radius: 14px; padding: 20px 24px; border: 1px solid var(--jet-border); }
+.stat-number { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--jet-black); }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--jet-muted); margin-top: 2px; }
+.section-box { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); overflow: hidden; }
+.section-box-header { padding: 16px 20px; border-bottom: 1px solid var(--jet-border); display: flex; justify-content: space-between; align-items: center; }
+.section-box-header h6 { font-family: var(--font-display); font-weight: 700; margin: 0; }
+.prod-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+.low-stock { color: #e85d04; font-weight: 700; }
+.order-notification { padding: 14px 20px; border-bottom: 1px solid var(--jet-border); }
+.order-notification:last-child { border-bottom: none; }
+.status-select { border: 1px solid var(--jet-border); border-radius: 8px; padding: 4px 8px; font-size: 0.78rem; font-family: var(--font-body); cursor: pointer; }
+.request-card { padding: 16px 20px; border-bottom: 1px solid var(--jet-border); }
+.request-card:last-child { border-bottom: none; }
+.badge-cancel { background: #ffebee; color: #c62828; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.badge-return { background: #e3f2fd; color: #1565c0; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.badge-pending { background: #fff8e1; color: #f57f17; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+{% endblock %}
+
+{% block content %}
+
+<div class="studio-header">
+  <div class="container" style="max-width:1400px">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Seller Studio</div>
+        <h1>Welcome back, {{ user.username }}</h1>
+        <p style="color:#888;margin-top:4px;font-size:0.88rem">Here's how your store is performing</p>
+      </div>
+      <a href="{% url 'producer_add_product' %}" class="btn-jet" style="text-decoration:none;display:inline-block">
+        <i class="bi bi-plus-lg me-1"></i> Add Product
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1400px">
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">📦</div>
+        <div class="stat-number">{{ total_products }}</div>
+        <div class="stat-label">Products Listed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">🛒</div>
+        <div class="stat-number">{{ total_sales }}</div>
+        <div class="stat-label">Units Sold</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">💰</div>
+        <div class="stat-number">₹{{ total_revenue }}</div>
+        <div class="stat-label">Total Revenue</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:1.5rem;margin-bottom:8px">🔔</div>
+        <div class="stat-number">{{ cancel_return_requests|length }}</div>
+        <div class="stat-label">Pending Requests</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Products -->
+    <div class="col-lg-8">
+      <div class="section-box mb-4">
+        <div class="section-box-header">
+          <h6>My Products</h6>
+          <a href="{% url 'producer_add_product' %}" class="btn-jet" style="text-decoration:none;font-size:0.82rem;padding:6px 14px">+ Add</a>
+        </div>
+        {% if products %}
+        <div class="table-responsive">
+          <table class="table mb-0 align-middle" style="font-size:0.88rem">
+            <thead style="background:var(--jet-gray)">
+              <tr>
+                <th style="padding:12px 16px;font-weight:600;color:var(--jet-muted);font-size:0.75rem;text-transform:uppercase">Product</th>
+                <th style="padding:12px 8px;font-weight:600;color:var(--jet-muted);font-size:0.75rem;text-transform:uppercase">Price</th>
+                <th style="padding:12px 8px;font-weight:600;color:var(--jet-muted);font-size:0.75rem;text-transform:uppercase">Stock</th>
+                <th style="padding:12px 8px;font-weight:600;color:var(--jet-muted);font-size:0.75rem;text-transform:uppercase">Status</th>
+                <th style="padding:12px 16px;font-weight:600;color:var(--jet-muted);font-size:0.75rem;text-transform:uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+              <tr style="border-bottom:1px solid var(--jet-border)">
+                <td style="padding:12px 16px">
+                  <div class="d-flex align-items-center gap-2">
+                    {% if product.image %}
+                      <img src="{{ product.image.url }}" class="prod-thumb">
+                    {% else %}
+                      <div class="prod-thumb d-flex align-items-center justify-content-center" style="background:var(--jet-gray);border-radius:8px">
+                        <i class="bi bi-image text-muted"></i>
+                      </div>
+                    {% endif %}
+                    <span style="font-weight:600">{{ product.name }}</span>
+                  </div>
+                </td>
+                <td style="padding:12px 8px;font-weight:700">₹{{ product.price }}</td>
+                <td style="padding:12px 8px">
+                  {% if product.stock < 5 %}
+                    <span class="low-stock">{{ product.stock }} ⚠</span>
+                  {% else %}{{ product.stock }}{% endif %}
+                </td>
+                <td style="padding:12px 8px">
+                  {% if product.is_available %}
+                    <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700">Active</span>
+                  {% else %}
+                    <span style="background:#f5f5f5;color:#888;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700">Inactive</span>
+                  {% endif %}
+                </td>
+                <td style="padding:12px 16px">
+                  <div class="d-flex gap-2">
+                    <a href="{% url 'producer_edit_product' product.id %}" class="btn-jet-outline" style="text-decoration:none;padding:5px 12px;font-size:0.8rem"><i class="bi bi-pencil"></i></a>
+                    <form method="POST" action="{% url 'producer_delete_product' product.id %}" class="d-inline" onsubmit="return confirm('Delete?')">
+                      {% csrf_token %}
+                      <button type="submit" style="background:#fff0f3;color:var(--jet-accent);border:none;padding:5px 12px;border-radius:8px;font-size:0.8rem"><i class="bi bi-trash"></i></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="color:var(--jet-muted)">
+          <div style="font-size:2.5rem">📦</div>
+          <p style="margin-top:12px;font-weight:600">No products yet</p>
+          <a href="{% url 'producer_add_product' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px">Add Your First Product</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Cancel / Return Requests -->
+      <div class="section-box">
+        <div class="section-box-header">
+          <h6>⚠️ Cancel / Return Requests</h6>
+          {% if cancel_return_requests %}
+            <span style="background:#ffebee;color:#c62828;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:100px">{{ cancel_return_requests|length }} pending</span>
+          {% endif %}
+        </div>
+        {% if cancel_return_requests %}
+          {% for req in cancel_return_requests %}
+          <div class="request-card">
+            <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+              <div>
+                <span class="{% if req.request_type == 'cancel' %}badge-cancel{% else %}badge-return{% endif %}">
+                  {% if req.request_type == 'cancel' %}❌ Cancel{% else %}↩️ Return{% endif %}
+                </span>
+                <span class="badge-pending ms-2">Pending</span>
+              </div>
+              <span style="font-size:0.75rem;color:var(--jet-muted)">{{ req.created_at|date:"d M Y, H:i" }}</span>
+            </div>
+            <div style="font-weight:700;font-size:0.88rem">Order #{{ req.order.id }} — by {{ req.user.username }}</div>
+            <div style="font-size:0.82rem;color:var(--jet-muted);margin-top:4px">
+              <strong>Reason:</strong> {{ req.reason }}
+            </div>
+            <div style="font-size:0.78rem;color:var(--jet-muted);margin-top:2px">
+              Order Status: <strong>{{ req.order.status|title }}</strong> · Total: <strong>₹{{ req.order.total_price }}</strong>
+            </div>
+
+            <!-- Approve / Reject Form -->
+            <form method="POST" action="{% url 'handle_cancel_return' req.id %}" class="mt-3">
+              {% csrf_token %}
+              <div class="mb-2">
+                <input type="text" name="producer_note" class="form-control form-control-sm" placeholder="Optional note to customer..." style="border-radius:8px">
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" name="action" value="approve" class="btn-jet" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer">
+                  ✅ Approve
+                </button>
+                <button type="submit" name="action" value="reject" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer;background:#fff0f3;color:var(--jet-accent);border:none;border-radius:10px;font-weight:600">
+                  ❌ Reject
+                </button>
+              </div>
+            </form>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4" style="color:var(--jet-muted)">
+            <div style="font-size:2rem">✅</div>
+            <p style="font-size:0.85rem;margin-top:8px">No pending cancel/return requests</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Order Notifications -->
+    <div class="col-lg-4">
+      <div class="section-box">
+        <div class="section-box-header">
+          <h6>🔔 New Orders</h6>
+          {% if order_items %}
+            <span style="background:#fff0f3;color:var(--jet-accent);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:100px">{{ order_items|length }} orders</span>
+          {% endif %}
+        </div>
+        {% if order_items %}
+          {% for item in order_items %}
+          <div class="order-notification">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div>
+                <div style="font-weight:700;font-size:0.88rem">{{ item.product.name }}</div>
+                <div style="font-size:0.78rem;color:var(--jet-muted)">
+                  Order #{{ item.order.id }} · {{ item.quantity }} unit{{ item.quantity|pluralize }} · by <strong>{{ item.order.user.username }}</strong>
+                </div>
+                <div style="font-size:0.73rem;color:var(--jet-muted)">{{ item.order.created_at|date:"d M Y, H:i" }}</div>
+              </div>
+              <div style="font-family:var(--font-display);font-weight:700;color:var(--jet-accent);font-size:0.9rem">₹{{ item.subtotal }}</div>
+            </div>
+            <form method="POST" action="{% url 'update_order_status' item.order.id %}" class="d-flex align-items-center gap-2 mt-2">
+              {% csrf_token %}
+              <select name="status" class="status-select">
+                <option value="pending" {% if item.order.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="processing" {% if item.order.status == 'processing' %}selected{% endif %}>Processing</option>
+                <option value="shipped" {% if item.order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                <option value="delivered" {% if item.order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                <option value="cancelled" {% if item.order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+              </select>
+              <button type="submit" class="btn-jet" style="padding:4px 12px;font-size:0.78rem">Update</button>
+              <a href="{% url 'download_invoice_producer' item.order.id %}" class="btn-jet-outline" style="padding:4px 10px;font-size:0.78rem;text-decoration:none" title="Download Invoice">📄</a>
+            </form>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4" style="color:var(--jet-muted)">
+            <div style="font-size:2rem">🔔</div>
+            <p style="font-size:0.85rem;margin-top:8px">No orders yet</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

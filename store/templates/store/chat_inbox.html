@@ -1,0 +1,76 @@
+{% extends 'store/base.html' %}
+{% block title %}Chats — JET{% endblock %}
+
+{% block extra_style %}
+.inbox-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.inbox-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -1px; }
+.chat-list-item { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--jet-border); text-decoration: none; color: var(--jet-black); transition: background 0.15s; }
+.chat-list-item:hover { background: var(--jet-gray); color: var(--jet-black); }
+.chat-list-item:last-child { border-bottom: none; }
+.chat-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--jet-accent), var(--jet-accent2)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+.chat-prod-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.unread-badge { background: var(--jet-accent); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 100px; padding: 2px 8px; min-width: 20px; text-align: center; }
+.role-badge { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; }
+.role-buyer { background: #e3f2fd; color: #1565c0; }
+.role-seller { background: #fff0f3; color: var(--jet-accent); }
+.section-box { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); overflow: hidden; }
+{% endblock %}
+
+{% block content %}
+
+<div class="inbox-header">
+  <div class="container" style="max-width:700px">
+    <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Messages</div>
+    <h1>💬 Chats</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">Conversations with buyers and sellers</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:700px">
+  <div class="section-box">
+    {% if rooms_data %}
+      {% for item in rooms_data %}
+      <a href="{% url 'chat_room' item.room.id %}" class="chat-list-item">
+
+        {% if item.room.product.image %}
+          <img src="{{ item.room.product.image.url }}" class="chat-prod-thumb" alt="{{ item.room.product.name }}">
+        {% else %}
+          <div class="chat-avatar">{{ item.other_user.username|first|upper }}</div>
+        {% endif %}
+
+        <div style="flex:1;min-width:0">
+          <div class="d-flex align-items-center gap-2">
+            <strong>{{ item.other_user.username }}</strong>
+            <span class="role-badge {% if item.role == 'buyer' %}role-buyer{% else %}role-seller{% endif %}">
+              {% if item.role == 'buyer' %}Seller{% else %}Buyer{% endif %}
+            </span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--jet-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {{ item.room.product.name }}
+          </div>
+          {% with last_msg=item.room.messages.last %}
+          {% if last_msg %}
+          <div style="font-size:0.8rem;color:#999;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {% if last_msg.sender == request.user %}You: {% endif %}{{ last_msg.text }}
+          </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+
+        {% if item.unread > 0 %}
+        <span class="unread-badge">{{ item.unread }}</span>
+        {% endif %}
+
+      </a>
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-5" style="color:var(--jet-muted)">
+        <div style="font-size:3rem">💬</div>
+        <h6 style="font-family:var(--font-display);margin-top:12px">No conversations yet</h6>
+        <p style="font-size:0.85rem">Start a chat from any product page by clicking "Chat with Seller"</p>
+        <a href="{% url 'home' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px">Browse Products</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

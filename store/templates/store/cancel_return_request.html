@@ -1,0 +1,95 @@
+{% extends 'store/base.html' %}
+{% block title %}Cancel / Return Request — JET{% endblock %}
+
+{% block extra_style %}
+.page-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.page-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; letter-spacing: -1px; }
+.jet-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 24px; }
+.type-option { border: 2px solid var(--jet-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+.type-option:has(input:checked) { border-color: var(--jet-accent); background: #fff0f3; }
+.type-option input { accent-color: var(--jet-accent); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="max-width:700px">
+    <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Order #{{ order.id }}</div>
+    <h1>Cancel / Return Request</h1>
+    <p style="color:#888;margin-top:4px;font-size:0.88rem">Submit your request and the seller will review it</p>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:700px">
+
+  <!-- Order Summary -->
+  <div class="jet-card mb-4">
+    <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:12px">Order Summary</h6>
+    <div class="d-flex justify-content-between mb-1">
+      <span style="color:var(--jet-muted)">Order ID</span>
+      <span style="font-weight:700">#{{ order.id }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-1">
+      <span style="color:var(--jet-muted)">Order Date</span>
+      <span>{{ order.created_at|date:"d M Y" }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-1">
+      <span style="color:var(--jet-muted)">Status</span>
+      <span style="font-weight:700">{{ order.status|title }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span style="color:var(--jet-muted)">Total</span>
+      <span style="font-weight:700;color:var(--jet-accent)">₹{{ order.total_price }}</span>
+    </div>
+  </div>
+
+  <!-- Request Form -->
+  <div class="jet-card">
+    <h6 style="font-family:var(--font-display);font-weight:700;margin-bottom:20px">Submit Request</h6>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <!-- Request Type -->
+      <div class="mb-4">
+        <label style="font-weight:600;display:block;margin-bottom:12px">Request Type</label>
+        <div class="row g-3">
+          {% if order.status not in 'shipped,delivered,cancelled' %}
+          <div class="col-6">
+            <label class="type-option d-flex align-items-center gap-3">
+              <input type="radio" name="request_type" value="cancel" required>
+              <div>
+                <div style="font-weight:700">❌ Cancel Order</div>
+                <div style="font-size:0.78rem;color:var(--jet-muted)">Cancel before shipping</div>
+              </div>
+            </label>
+          </div>
+          {% endif %}
+          {% if order.status == 'delivered' %}
+          <div class="col-6">
+            <label class="type-option d-flex align-items-center gap-3">
+              <input type="radio" name="request_type" value="return" required>
+              <div>
+                <div style="font-weight:700">↩️ Return Order</div>
+                <div style="font-size:0.78rem;color:var(--jet-muted)">Return delivered order</div>
+              </div>
+            </label>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div class="mb-4">
+        <label style="font-weight:600;display:block;margin-bottom:8px">Reason for Request *</label>
+        <textarea name="reason" class="form-control" rows="4" required placeholder="Please explain why you want to cancel or return this order..." style="border-radius:10px;border-color:var(--jet-border)"></textarea>
+      </div>
+
+      <div class="d-flex gap-3">
+        <a href="{% url 'order_tracking' order.id %}" class="btn-jet-outline" style="text-decoration:none;flex:1;text-align:center;padding:12px">← Back</a>
+        <button type="submit" class="btn-jet" style="flex:1;padding:12px;cursor:pointer">Submit Request</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

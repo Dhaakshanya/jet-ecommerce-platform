@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}JET Marketplace{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --jet-black: #0a0a0a;
+      --jet-white: #fafafa;
+      --jet-accent: #ff3b5c;
+      --jet-accent2: #ff8c00;
+      --jet-gray: #f2f2f0;
+      --jet-muted: #888;
+      --jet-border: #e8e8e4;
+      --jet-card: #ffffff;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --radius: 14px;
+      --shadow: 0 2px 20px rgba(0,0,0,0.06);
+      --shadow-hover: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    * { box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--jet-gray); color: var(--jet-black); margin: 0; font-size: 0.93rem; }
+    .jet-nav { background: var(--jet-white); border-bottom: 1px solid var(--jet-border); position: sticky; top: 0; z-index: 1000; padding: 0; }
+    .jet-nav-inner { display: flex; align-items: center; height: 60px; gap: 0; padding: 0 24px; max-width: 1400px; margin: 0 auto; }
+    .jet-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--jet-black); text-decoration: none; letter-spacing: -1px; flex-shrink: 0; }
+    .jet-logo span { color: var(--jet-accent); }
+    .jet-search { flex: 1; margin: 0 24px; max-width: 480px; }
+    .jet-search form { display: flex; background: var(--jet-gray); border-radius: 10px; border: 1.5px solid transparent; overflow: hidden; transition: border-color 0.2s; }
+    .jet-search form:focus-within { border-color: var(--jet-accent); background: #fff; }
+    .jet-search input { flex: 1; border: none; background: transparent; padding: 9px 14px; font-family: var(--font-body); font-size: 0.88rem; outline: none; color: var(--jet-black); }
+    .jet-search button { background: none; border: none; padding: 0 14px; color: var(--jet-muted); cursor: pointer; font-size: 1rem; }
+    .jet-search button:hover { color: var(--jet-accent); }
+    .jet-nav-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+    .jet-nav-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 10px; border: none; background: transparent; color: var(--jet-black); font-family: var(--font-body); font-size: 0.85rem; font-weight: 500; text-decoration: none; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .jet-nav-btn:hover { background: var(--jet-gray); color: var(--jet-black); }
+    .jet-nav-btn.accent { background: var(--jet-accent); color: #fff; font-weight: 600; }
+    .jet-nav-btn.accent:hover { background: #e02244; color: #fff; }
+    .jet-nav-btn.outline { border: 1.5px solid var(--jet-border); }
+    .jet-nav-btn.outline:hover { border-color: var(--jet-accent); color: var(--jet-accent); }
+    .jet-profile-btn { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid var(--jet-border); background: #fff; cursor: pointer; transition: all 0.15s; text-decoration: none; color: var(--jet-black); font-size: 0.85rem; font-weight: 500; }
+    .jet-profile-btn:hover { border-color: var(--jet-accent); color: var(--jet-black); }
+    .jet-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--jet-accent), var(--jet-accent2)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.75rem; flex-shrink: 0; }
+    .jet-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 300px; background: #fff; border-radius: var(--radius); border: 1px solid var(--jet-border); box-shadow: var(--shadow-hover); z-index: 2000; overflow: hidden; display: none; }
+    .jet-dropdown.show { display: block; }
+    .jet-dropdown-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--jet-border); }
+    .jet-dropdown-section { padding: 8px 0; border-bottom: 1px solid var(--jet-border); }
+    .jet-dropdown-section:last-child { border-bottom: none; }
+    .jet-dropdown-label { padding: 4px 20px; font-size: 0.7rem; font-weight: 700; color: var(--jet-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .jet-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: var(--jet-black); text-decoration: none; font-size: 0.88rem; transition: background 0.12s; }
+    .jet-dropdown-item:hover { background: var(--jet-gray); color: var(--jet-black); }
+    .jet-dropdown-item.danger { color: var(--jet-accent); }
+    .jet-dropdown-item.danger:hover { background: #fff0f3; }
+    .jet-dropdown-item i { width: 18px; text-align: center; color: var(--jet-muted); font-size: 0.95rem; }
+    .jet-dropdown-item.danger i { color: var(--jet-accent); }
+    .jet-dropdown-item.admin { color: #6a1b9a; }
+    .jet-dropdown-item.admin i { color: #6a1b9a; }
+    .jet-dropdown-item.admin:hover { background: #f3e5f5; }
+    .seller-studio-card { margin: 12px 16px; padding: 14px 16px; background: linear-gradient(135deg, #0a0a0a 0%, #2d2d2d 100%); border-radius: 12px; color: #fff; text-decoration: none; display: block; transition: transform 0.15s; }
+    .seller-studio-card:hover { transform: translateY(-1px); color: #fff; }
+    .seller-studio-card .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+    .seller-studio-card .title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin-top: 2px; }
+    .seller-studio-card .sub { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+    .seller-active-card { margin: 12px 16px; padding: 14px 16px; background: linear-gradient(135deg, #ff3b5c 0%, #ff8c00 100%); border-radius: 12px; color: #fff; text-decoration: none; display: block; transition: transform 0.15s; }
+    .seller-active-card:hover { transform: translateY(-1px); color: #fff; }
+    .admin-studio-card { margin: 12px 16px; padding: 14px 16px; background: linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%); border-radius: 12px; color: #fff; text-decoration: none; display: block; transition: transform 0.15s; }
+    .admin-studio-card:hover { transform: translateY(-1px); color: #fff; }
+    .btn-jet { background: var(--jet-accent); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-family: var(--font-body); padding: 9px 20px; transition: all 0.15s; }
+    .btn-jet:hover { background: #e02244; color: #fff; transform: translateY(-1px); }
+    .btn-jet-outline { background: #fff; color: var(--jet-black); border: 1.5px solid var(--jet-border); border-radius: 10px; font-weight: 600; font-family: var(--font-body); padding: 8px 20px; transition: all 0.15s; }
+    .btn-jet-outline:hover { border-color: var(--jet-accent); color: var(--jet-accent); }
+    .btn-jet-dark { background: var(--jet-black); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-family: var(--font-body); padding: 9px 20px; transition: all 0.15s; }
+    .btn-jet-dark:hover { background: #222; color: #fff; }
+    .jet-card { background: var(--jet-card); border-radius: var(--radius); border: 1px solid var(--jet-border); }
+    .jet-alert { border-radius: 10px; border: none; font-size: 0.88rem; padding: 10px 16px; }
+    .jet-footer { background: var(--jet-black); color: #666; padding: 48px 0 24px; margin-top: 60px; }
+    .jet-footer a { color: #666; text-decoration: none; transition: color 0.15s; }
+    .jet-footer a:hover { color: #fff; }
+    .jet-footer-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; color: #fff; letter-spacing: -1px; }
+    .jet-footer-logo span { color: var(--jet-accent); }
+    .jet-footer h6 { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .jet-footer-link { display: block; margin-bottom: 8px; font-size: 0.85rem; }
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="jet-nav">
+  <div class="jet-nav-inner">
+    <a href="{% url 'home' %}" class="jet-logo">JET<span>.</span></a>
+    <div class="jet-search">
+      <form method="GET" action="{% url 'home' %}">
+        <input type="text" name="q" placeholder="Search products, brands, categories..." value="{% block search_value %}{% endblock %}">
+        <button type="submit"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+    <div class="jet-nav-actions">
+      {% if user.is_authenticated %}
+        <a href="{% url 'chat_inbox' %}" class="jet-nav-btn" title="Chats">
+          <i class="bi bi-chat-dots"></i>
+          <span class="d-none d-lg-inline">Chats</span>
+        </a>
+        <a href="{% url 'wishlist_page' %}" class="jet-nav-btn" title="Wishlist">
+          <i class="bi bi-heart"></i>
+          <span class="d-none d-lg-inline">Wishlist</span>
+        </a>
+        <a href="{% url 'cart_page' %}" class="jet-nav-btn" title="Cart">
+          <i class="bi bi-bag"></i>
+          <span class="d-none d-lg-inline">Bag</span>
+        </a>
+        <div class="position-relative" id="profileMenu">
+          <button class="jet-profile-btn" onclick="toggleDropdown()">
+            <div class="jet-avatar">{{ user.username|first|upper }}</div>
+            <span class="d-none d-md-inline">{{ user.username }}</span>
+            <i class="bi bi-chevron-down" style="font-size:0.7rem;color:var(--jet-muted)"></i>
+          </button>
+          <div class="jet-dropdown" id="profileDropdown">
+            <div class="jet-dropdown-header">
+              <div style="font-weight:700;font-family:var(--font-display)">{{ user.username }}</div>
+              <div style="color:var(--jet-muted);font-size:0.8rem">{{ user.email }}</div>
+            </div>
+
+            {% if user.is_superuser %}
+            <!-- Admin section -->
+            <div class="jet-dropdown-section">
+              <div class="jet-dropdown-label">Administration</div>
+              <a href="{% url 'admin_analytics' %}" class="admin-studio-card">
+                <div class="label">Superuser Access</div>
+                <div class="title">📊 Admin Dashboard <i class="bi bi-arrow-right"></i></div>
+                <div class="sub">Sales, users & analytics overview</div>
+              </a>
+            </div>
+            {% endif %}
+
+            <div class="jet-dropdown-section">
+              <div class="jet-dropdown-label">Shopping</div>
+              <a href="{% url 'buyer_dashboard' %}" class="jet-dropdown-item"><i class="bi bi-grid-1x2"></i> Consumer Dashboard</a>
+              <a href="{% url 'cart_page' %}" class="jet-dropdown-item"><i class="bi bi-bag"></i> My Bag</a>
+              <a href="{% url 'wishlist_page' %}" class="jet-dropdown-item"><i class="bi bi-heart"></i> Wishlist</a>
+            </div>
+            <div class="jet-dropdown-section">
+              <div class="jet-dropdown-label">Seller Studio</div>
+              {% if user.profile.is_producer %}
+                <a href="{% url 'producer_dashboard' %}" class="seller-active-card">
+                  <div class="label">Active Seller</div>
+                  <div class="title">Seller Studio <i class="bi bi-arrow-right"></i></div>
+                  <div class="sub">Manage products & view sales</div>
+                </a>
+                <a href="{% url 'producer_add_product' %}" class="jet-dropdown-item"><i class="bi bi-plus-circle"></i> Add New Product</a>
+              {% else %}
+                <a href="{% url 'become_producer' %}" class="seller-studio-card">
+                  <div class="label">Start for free</div>
+                  <div class="title">Open Seller Studio <i class="bi bi-arrow-right"></i></div>
+                  <div class="sub">List products & reach buyers</div>
+                </a>
+              {% endif %}
+            </div>
+            <div class="jet-dropdown-section">
+              <a href="{% url 'logout' %}" class="jet-dropdown-item danger"><i class="bi bi-box-arrow-right"></i> Sign Out</a>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'login' %}" class="jet-nav-btn outline">Login</a>
+        <a href="{% url 'register' %}" class="jet-nav-btn accent">Register</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- MESSAGES -->
+{% if messages %}
+<div style="max-width:1400px;margin:12px auto;padding:0 24px">
+  {% for message in messages %}
+    <div class="jet-alert alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- CONTENT -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer class="jet-footer">
+  <div class="container" style="max-width:1400px">
+    <div class="row mb-4">
+      <div class="col-md-4 mb-4">
+        <div class="jet-footer-logo">JET<span>.</span></div>
+        <p style="font-size:0.85rem;margin-top:10px;max-width:260px">A modern marketplace where anyone can buy, sell, and discover products they love.</p>
+      </div>
+      <div class="col-6 col-md-2 mb-4">
+        <h6>Shop</h6>
+        <a href="{% url 'home' %}" class="jet-footer-link">All Products</a>
+        <a href="?category=electronics" class="jet-footer-link">Electronics</a>
+        <a href="?category=clothing" class="jet-footer-link">Clothing</a>
+        <a href="?category=accessories" class="jet-footer-link">Accessories</a>
+      </div>
+      <div class="col-6 col-md-2 mb-4">
+        <h6>Sell</h6>
+        {% if user.is_authenticated and user.profile.is_producer %}
+          <a href="{% url 'producer_dashboard' %}" class="jet-footer-link">Seller Studio</a>
+          <a href="{% url 'producer_add_product' %}" class="jet-footer-link">Add Product</a>
+        {% else %}
+          <a href="{% url 'become_producer' %}" class="jet-footer-link">Start Selling</a>
+        {% endif %}
+      </div>
+      <div class="col-6 col-md-2 mb-4">
+        <h6>Account</h6>
+        {% if user.is_authenticated %}
+          <a href="{% url 'buyer_dashboard' %}" class="jet-footer-link">Consumer Dashboard</a>
+          <a href="{% url 'wishlist_page' %}" class="jet-footer-link">Wishlist</a>
+          {% if user.is_superuser %}
+          <a href="{% url 'admin_analytics' %}" class="jet-footer-link">Admin Dashboard</a>
+          {% endif %}
+          <a href="{% url 'logout' %}" class="jet-footer-link">Sign Out</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="jet-footer-link">Login</a>
+          <a href="{% url 'register' %}" class="jet-footer-link">Register</a>
+        {% endif %}
+      </div>
+      <div class="col-6 col-md-2 mb-4">
+        <h6>Follow</h6>
+        <a href="#" class="jet-footer-link"><i class="bi bi-instagram me-1"></i>Instagram</a>
+        <a href="#" class="jet-footer-link"><i class="bi bi-twitter me-1"></i>Twitter</a>
+        <a href="#" class="jet-footer-link"><i class="bi bi-linkedin me-1"></i>LinkedIn</a>
+      </div>
+    </div>
+    <div style="border-top:1px solid #1e1e1e;padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <span style="font-size:0.8rem">© 2026 JET Marketplace. All rights reserved.</span>
+      <span style="font-size:0.8rem">Made with ❤️ in India</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleDropdown() {
+  const d = document.getElementById('profileDropdown');
+  d.classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('profileMenu');
+  if (menu && !menu.contains(e.target)) {
+    document.getElementById('profileDropdown').classList.remove('show');
+  }
+});
+</script>
+{% block extra_script %}{% endblock %}
+</body>
+</html>
