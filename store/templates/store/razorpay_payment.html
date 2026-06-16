@@ -23,6 +23,10 @@
       Pay ₹{{ order.total_price }} via UPI, Card, Netbanking, or Wallet
     </p>
 
+    <p>Key: {{ razorpay_key }}</p>
+    <p>Order ID: {{ razorpay_order_id }}</p>
+    <p>Amount: {{ amount }}</p>
+
     <button id="payBtn" class="btn-jet" style="padding:14px 32px;font-size:1rem;cursor:pointer">
       Pay ₹{{ order.total_price }} Now
     </button>
