@@ -20,6 +20,16 @@
 .badge-cancel { background: #ffebee; color: #c62828; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
 .badge-return { background: #e3f2fd; color: #1565c0; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
 .badge-pending { background: #fff8e1; color: #f57f17; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.order-tab-btn { background: none; border: none; padding: 8px 16px; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; color: var(--jet-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.order-tab-btn.active { color: var(--jet-accent); border-bottom-color: var(--jet-accent); }
+.order-tab-content { display: none; }
+.order-tab-content.active { display: block; }
+.status-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.status-pending { background: #fff8e1; color: #f57f17; }
+.status-processing { background: #e3f2fd; color: #1565c0; }
+.status-shipped { background: #e8f5e9; color: #2e7d32; }
+.status-delivered { background: #e8f5e9; color: #2e7d32; }
+.status-cancelled { background: #ffebee; color: #c62828; }
 {% endblock %}
 
 {% block content %}
@@ -66,7 +76,7 @@
     </div>
     <div class="col-6 col-md-3">
       <div class="stat-card">
-        <div style="font-size:1.5rem;margin-bottom:8px">🔔</div>
+        <div style="font-size:1.5rem;margin-bottom:8px">⚠️</div>
         <div class="stat-number">{{ cancel_return_requests|length }}</div>
         <div class="stat-label">Pending Requests</div>
       </div>
@@ -75,8 +85,10 @@
 
   <div class="row g-4">
 
-    <!-- Products -->
-    <div class="col-lg-8">
+    <!-- Left Column: Products + Cancel/Return Requests -->
+    <div class="col-lg-7">
+
+      <!-- Products -->
       <div class="section-box mb-4">
         <div class="section-box-header">
           <h6>My Products</h6>
@@ -102,7 +114,7 @@
                     {% if product.image %}
                       <img src="{{ product.image.url }}" class="prod-thumb">
                     {% else %}
-                      <div class="prod-thumb d-flex align-items-center justify-content-center" style="background:var(--jet-gray);border-radius:8px">
+                      <div class="prod-thumb d-flex align-items-center justify-content-center" style="background:var(--jet-gray)">
                         <i class="bi bi-image text-muted"></i>
                       </div>
                     {% endif %}
@@ -166,26 +178,18 @@
               <span style="font-size:0.75rem;color:var(--jet-muted)">{{ req.created_at|date:"d M Y, H:i" }}</span>
             </div>
             <div style="font-weight:700;font-size:0.88rem">Order #{{ req.order.id }} — by {{ req.user.username }}</div>
-            <div style="font-size:0.82rem;color:var(--jet-muted);margin-top:4px">
-              <strong>Reason:</strong> {{ req.reason }}
-            </div>
+            <div style="font-size:0.82rem;color:var(--jet-muted);margin-top:4px"><strong>Reason:</strong> {{ req.reason }}</div>
             <div style="font-size:0.78rem;color:var(--jet-muted);margin-top:2px">
               Order Status: <strong>{{ req.order.status|title }}</strong> · Total: <strong>₹{{ req.order.total_price }}</strong>
             </div>
-
-            <!-- Approve / Reject Form -->
             <form method="POST" action="{% url 'handle_cancel_return' req.id %}" class="mt-3">
               {% csrf_token %}
               <div class="mb-2">
                 <input type="text" name="producer_note" class="form-control form-control-sm" placeholder="Optional note to customer..." style="border-radius:8px">
               </div>
               <div class="d-flex gap-2">
-                <button type="submit" name="action" value="approve" class="btn-jet" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer">
-                  ✅ Approve
-                </button>
-                <button type="submit" name="action" value="reject" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer;background:#fff0f3;color:var(--jet-accent);border:none;border-radius:10px;font-weight:600">
-                  ❌ Reject
-                </button>
+                <button type="submit" name="action" value="approve" class="btn-jet" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer">✅ Approve</button>
+                <button type="submit" name="action" value="reject" style="flex:1;padding:7px;font-size:0.82rem;cursor:pointer;background:#fff0f3;color:var(--jet-accent);border:none;border-radius:10px;font-weight:600">❌ Reject</button>
               </div>
             </form>
           </div>
@@ -193,57 +197,153 @@
         {% else %}
           <div class="text-center py-4" style="color:var(--jet-muted)">
             <div style="font-size:2rem">✅</div>
-            <p style="font-size:0.85rem;margin-top:8px">No pending cancel/return requests</p>
+            <p style="font-size:0.85rem;margin-top:8px">No pending requests</p>
           </div>
         {% endif %}
       </div>
+
     </div>
 
-    <!-- Order Notifications -->
-    <div class="col-lg-4">
+    <!-- Right Column: Orders with Tabs -->
+    <div class="col-lg-5">
       <div class="section-box">
         <div class="section-box-header">
-          <h6>🔔 New Orders</h6>
-          {% if order_items %}
-            <span style="background:#fff0f3;color:var(--jet-accent);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:100px">{{ order_items|length }} orders</span>
+          <h6>🔔 Orders</h6>
+        </div>
+
+        <!-- Order Tabs -->
+        <div style="border-bottom:1px solid var(--jet-border);padding:0 12px;display:flex;gap:4px">
+          <button class="order-tab-btn active" onclick="switchTab('active', this)">
+            Active
+            {% if active_order_items %}
+            <span style="background:var(--jet-accent);color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:100px;margin-left:4px">{{ active_order_items|length }}</span>
+            {% endif %}
+          </button>
+          <button class="order-tab-btn" onclick="switchTab('delivered', this)">
+            Delivered
+            {% if delivered_order_items %}
+            <span style="background:#2e7d32;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:100px;margin-left:4px">{{ delivered_order_items|length }}</span>
+            {% endif %}
+          </button>
+          <button class="order-tab-btn" onclick="switchTab('cancelled', this)">
+            Cancelled
+            {% if cancelled_order_items %}
+            <span style="background:#888;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:100px;margin-left:4px">{{ cancelled_order_items|length }}</span>
+            {% endif %}
+          </button>
+        </div>
+
+        <!-- Active Orders Tab -->
+        <div id="tab-active" class="order-tab-content active">
+          {% if active_order_items %}
+            {% for item in active_order_items %}
+            <div class="order-notification">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <div>
+                  <div style="font-weight:700;font-size:0.88rem">{{ item.product.name }}</div>
+                  <div style="font-size:0.78rem;color:var(--jet-muted)">
+                    Order #{{ item.order.id }} · {{ item.quantity }} unit{{ item.quantity|pluralize }} · by <strong>{{ item.order.user.username }}</strong>
+                  </div>
+                  <div style="font-size:0.73rem;color:var(--jet-muted)">{{ item.order.created_at|date:"d M Y, H:i" }}</div>
+                </div>
+                <div>
+                  <span class="status-badge status-{{ item.order.status }}">{{ item.order.status|title }}</span>
+                  <div style="font-family:var(--font-display);font-weight:700;color:var(--jet-accent);font-size:0.9rem;text-align:right;margin-top:4px">₹{{ item.subtotal }}</div>
+                </div>
+              </div>
+              <form method="POST" action="{% url 'update_order_status' item.order.id %}" class="d-flex align-items-center gap-2 mt-2">
+                {% csrf_token %}
+                <select name="status" class="status-select">
+                  <option value="pending" {% if item.order.status == 'pending' %}selected{% endif %}>Pending</option>
+                  <option value="processing" {% if item.order.status == 'processing' %}selected{% endif %}>Processing</option>
+                  <option value="shipped" {% if item.order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                  <option value="delivered" {% if item.order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                  <option value="cancelled" {% if item.order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+                <button type="submit" class="btn-jet" style="padding:4px 12px;font-size:0.78rem">Update</button>
+                <a href="{% url 'download_invoice_producer' item.order.id %}" class="btn-jet-outline" style="padding:4px 10px;font-size:0.78rem;text-decoration:none" title="Download Invoice">📄</a>
+              </form>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4" style="color:var(--jet-muted)">
+              <div style="font-size:2rem">🔔</div>
+              <p style="font-size:0.85rem;margin-top:8px">No active orders</p>
+            </div>
           {% endif %}
         </div>
-        {% if order_items %}
-          {% for item in order_items %}
-          <div class="order-notification">
-            <div class="d-flex justify-content-between align-items-start mb-1">
-              <div>
-                <div style="font-weight:700;font-size:0.88rem">{{ item.product.name }}</div>
-                <div style="font-size:0.78rem;color:var(--jet-muted)">
-                  Order #{{ item.order.id }} · {{ item.quantity }} unit{{ item.quantity|pluralize }} · by <strong>{{ item.order.user.username }}</strong>
+
+        <!-- Delivered Orders Tab -->
+        <div id="tab-delivered" class="order-tab-content">
+          {% if delivered_order_items %}
+            {% for item in delivered_order_items %}
+            <div class="order-notification">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div style="font-weight:700;font-size:0.88rem">{{ item.product.name }}</div>
+                  <div style="font-size:0.78rem;color:var(--jet-muted)">
+                    Order #{{ item.order.id }} · {{ item.quantity }} unit{{ item.quantity|pluralize }} · by <strong>{{ item.order.user.username }}</strong>
+                  </div>
+                  <div style="font-size:0.73rem;color:var(--jet-muted)">{{ item.order.created_at|date:"d M Y, H:i" }}</div>
                 </div>
-                <div style="font-size:0.73rem;color:var(--jet-muted)">{{ item.order.created_at|date:"d M Y, H:i" }}</div>
+                <div style="text-align:right">
+                  <span class="status-badge status-delivered">✅ Delivered</span>
+                  <div style="font-family:var(--font-display);font-weight:700;color:var(--jet-accent);font-size:0.9rem;margin-top:4px">₹{{ item.subtotal }}</div>
+                  <a href="{% url 'download_invoice_producer' item.order.id %}" class="btn-jet-outline" style="padding:3px 8px;font-size:0.72rem;text-decoration:none;display:inline-block;margin-top:4px">📄 Invoice</a>
+                </div>
               </div>
-              <div style="font-family:var(--font-display);font-weight:700;color:var(--jet-accent);font-size:0.9rem">₹{{ item.subtotal }}</div>
             </div>
-            <form method="POST" action="{% url 'update_order_status' item.order.id %}" class="d-flex align-items-center gap-2 mt-2">
-              {% csrf_token %}
-              <select name="status" class="status-select">
-                <option value="pending" {% if item.order.status == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="processing" {% if item.order.status == 'processing' %}selected{% endif %}>Processing</option>
-                <option value="shipped" {% if item.order.status == 'shipped' %}selected{% endif %}>Shipped</option>
-                <option value="delivered" {% if item.order.status == 'delivered' %}selected{% endif %}>Delivered</option>
-                <option value="cancelled" {% if item.order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-              </select>
-              <button type="submit" class="btn-jet" style="padding:4px 12px;font-size:0.78rem">Update</button>
-              <a href="{% url 'download_invoice_producer' item.order.id %}" class="btn-jet-outline" style="padding:4px 10px;font-size:0.78rem;text-decoration:none" title="Download Invoice">📄</a>
-            </form>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="text-center py-4" style="color:var(--jet-muted)">
-            <div style="font-size:2rem">🔔</div>
-            <p style="font-size:0.85rem;margin-top:8px">No orders yet</p>
-          </div>
-        {% endif %}
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4" style="color:var(--jet-muted)">
+              <div style="font-size:2rem">📦</div>
+              <p style="font-size:0.85rem;margin-top:8px">No delivered orders yet</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Cancelled Orders Tab -->
+        <div id="tab-cancelled" class="order-tab-content">
+          {% if cancelled_order_items %}
+            {% for item in cancelled_order_items %}
+            <div class="order-notification">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div style="font-weight:700;font-size:0.88rem">{{ item.product.name }}</div>
+                  <div style="font-size:0.78rem;color:var(--jet-muted)">
+                    Order #{{ item.order.id }} · {{ item.quantity }} unit{{ item.quantity|pluralize }} · by <strong>{{ item.order.user.username }}</strong>
+                  </div>
+                  <div style="font-size:0.73rem;color:var(--jet-muted)">{{ item.order.created_at|date:"d M Y, H:i" }}</div>
+                </div>
+                <div style="text-align:right">
+                  <span class="status-badge status-cancelled">❌ Cancelled</span>
+                  <div style="font-family:var(--font-display);font-weight:700;color:#888;font-size:0.9rem;margin-top:4px">₹{{ item.subtotal }}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4" style="color:var(--jet-muted)">
+              <div style="font-size:2rem">✅</div>
+              <p style="font-size:0.85rem;margin-top:8px">No cancelled orders</p>
+            </div>
+          {% endif %}
+        </div>
+
       </div>
     </div>
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.order-tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.order-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
 {% endblock %}

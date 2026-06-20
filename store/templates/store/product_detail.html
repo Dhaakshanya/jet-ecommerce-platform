@@ -105,22 +105,33 @@
 
         {% if product.in_stock %}
           <p class="stock-badge mb-3"><i class="bi bi-check-circle-fill"></i> In Stock — {{ product.stock }} units left</p>
-          <form method="POST" action="{% url 'add_to_cart' product.id %}">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <label style="font-weight:600">Quantity:</label>
+            <input type="number" id="qtyInput" value="1" min="1" max="{{ product.stock }}" class="form-control" style="width:90px;border-radius:8px">
+          </div>
+
+          <form method="POST" action="{% url 'add_to_cart' product.id %}" id="addToCartForm">
             {% csrf_token %}
-            <div class="d-flex align-items-center gap-3 mb-4">
-              <label style="font-weight:600">Quantity:</label>
-              <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control" style="width:90px;border-radius:8px">
-            </div>
-            <div class="d-flex gap-3">
-              <button type="submit" class="btn-jet flex-fill" style="padding:12px">
-                <i class="bi bi-bag-plus"></i> Add to Bag
-              </button>
-              <a href="{% url 'toggle_wishlist' product.id %}" class="btn {% if in_wishlist %}btn-wishlisted{% else %}btn-wishlist{% endif %} flex-fill" style="padding:12px;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
-                <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %}"></i>
-                {% if in_wishlist %}Wishlisted{% else %}Wishlist{% endif %}
-              </a>
-            </div>
+            <input type="hidden" name="quantity" id="cartQtyHidden" value="1">
           </form>
+          <form method="POST" action="{% url 'buy_now' product.id %}" id="buyNowForm">
+            {% csrf_token %}
+            <input type="hidden" name="quantity" id="buyNowQtyHidden" value="1">
+          </form>
+
+          <div class="d-flex gap-3">
+            <button type="button" onclick="submitAddToCart()" class="btn-jet-outline flex-fill" style="padding:12px">
+              <i class="bi bi-bag-plus"></i> Add to Bag
+            </button>
+            <button type="button" onclick="submitBuyNow()" class="btn-jet flex-fill" style="padding:12px">
+              <i class="bi bi-lightning-fill"></i> Buy Now
+            </button>
+          </div>
+          <a href="{% url 'toggle_wishlist' product.id %}" class="btn {% if in_wishlist %}btn-wishlisted{% else %}btn-wishlist{% endif %} w-100 mt-3" style="padding:10px;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
+            <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %}"></i>
+            {% if in_wishlist %}Wishlisted{% else %}Wishlist{% endif %}
+          </a>
+
           {% if user.is_authenticated and product.producer and user != product.producer %}
           <a href="{% url 'start_chat' product.slug %}" class="btn-jet-outline" style="text-decoration:none;display:block;text-align:center;padding:10px;margin-top:10px">
             💬 Chat with Seller
@@ -266,6 +277,18 @@
 function setActiveThumb(el) {
   document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+}
+
+function submitAddToCart() {
+  const qty = document.getElementById('qtyInput').value;
+  document.getElementById('cartQtyHidden').value = qty;
+  document.getElementById('addToCartForm').submit();
+}
+
+function submitBuyNow() {
+  const qty = document.getElementById('qtyInput').value;
+  document.getElementById('buyNowQtyHidden').value = qty;
+  document.getElementById('buyNowForm').submit();
 }
 
 // Star rating input

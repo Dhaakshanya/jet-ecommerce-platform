@@ -2,9 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-# =========================
-# CATEGORY
-# =========================
 class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
@@ -19,12 +16,13 @@ class Category(models.Model):
         return self.name
 
 
-# =========================
-# PRODUCT
-# =========================
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='products')
-    producer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, related_name='products'
+    )
+    producer = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='products'
+    )
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
@@ -46,9 +44,6 @@ class Product(models.Model):
         return self.stock > 0
 
 
-# =========================
-# ORDER
-# =========================
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -57,7 +52,6 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
-
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     is_complete = models.BooleanField(default=False)
@@ -79,9 +73,42 @@ class Order(models.Model):
         return sum(item.quantity for item in self.items.all())
 
 
-# =========================
-# ORDER ITEM
-# =========================
+class OrderTracking(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tracking')
+    status = models.CharField(max_length=20)
+    message = models.CharField(max_length=300, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"Order #{self.order.id} — {self.status}"
+
+
+class CancelReturnRequest(models.Model):
+    TYPE_CHOICES = [
+        ('cancel', 'Cancel'),
+        ('return', 'Return'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='requests')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    request_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    reason = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    producer_note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.request_type.title()} request for Order #{self.order.id} — {self.status}"
+
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -96,53 +123,6 @@ class OrderItem(models.Model):
         return self.price * self.quantity
 
 
-# =========================
-# ORDER TRACKING
-# =========================
-class OrderTracking(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='tracking')
-    status = models.CharField(max_length=20)
-    message = models.CharField(max_length=300, blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['timestamp']
-
-    def __str__(self):
-        return f"Order #{self.order.id} — {self.status}"
-
-
-# =========================
-# CANCEL / RETURN
-# =========================
-class CancelReturnRequest(models.Model):
-    TYPE_CHOICES = [
-        ('cancel', 'Cancel'),
-        ('return', 'Return'),
-    ]
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='requests')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    request_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    reason = models.TextField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    producer_note = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.request_type.title()} request for Order #{self.order.id}"
-
-
-# =========================
-# SHIPPING ADDRESS
-# =========================
 class ShippingAddress(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='shipping_address')
     full_name = models.CharField(max_length=200)
@@ -154,18 +134,14 @@ class ShippingAddress(models.Model):
     phone = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
-        return f"Shipping for Order #{self.order.id}"
+        return f"Shipping for Order #{self.order.id} — {self.full_name}"
 
 
-# =========================
-# PROFILE
-# =========================
 class Profile(models.Model):
     ROLE_CHOICES = [
         ('customer', 'Customer'),
         ('producer', 'Producer'),
     ]
-
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     phone = models.CharField(max_length=20, blank=True)
@@ -183,9 +159,6 @@ class Profile(models.Model):
         return self.role == 'customer'
 
 
-# =========================
-# WISHLIST
-# =========================
 class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -198,9 +171,6 @@ class Wishlist(models.Model):
         return f"{self.user.username} — {self.product.name}"
 
 
-# =========================
-# REVIEW
-# =========================
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -216,24 +186,6 @@ class Review(models.Model):
         return f"{self.user.username} — {self.product.name} ({self.rating}★)"
 
 
-# =========================
-# REVIEW IMAGE (NEW)
-# =========================
-class ReviewImage(models.Model):
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='reviews/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['id']
-
-    def __str__(self):
-        return f"Image for Review #{self.review.id}"
-
-
-# =========================
-# PRODUCT IMAGE GALLERY
-# =========================
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='gallery_images')
     image = models.ImageField(upload_to='products/gallery/')
@@ -246,10 +198,8 @@ class ProductImage(models.Model):
         return f"Image for {self.product.name}"
 
 
-# =========================
-# CHAT ROOM
-# =========================
 class ChatRoom(models.Model):
+    """A chat room is unique per (product, buyer) pair. Seller = product.producer."""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='chat_rooms')
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_rooms_as_buyer')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -259,16 +209,13 @@ class ChatRoom(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Chat: {self.buyer.username} <-> {self.product.producer.username}"
+        return f"Chat: {self.buyer.username} <-> {self.product.producer.username} ({self.product.name})"
 
     @property
     def seller(self):
         return self.product.producer
 
 
-# =========================
-# CHAT MESSAGE
-# =========================
 class ChatMessage(models.Model):
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -281,3 +228,24 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.text[:30]}"
+
+
+class DeletedMessage(models.Model):
+    """Tracks which messages a user has deleted for themselves only (Delete for Me)."""
+    message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name='deletions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    deleted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('message', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} deleted message #{self.message.id}"
+    
+class ReviewImage(models.Model):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='reviews/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for review #{self.review.id}"

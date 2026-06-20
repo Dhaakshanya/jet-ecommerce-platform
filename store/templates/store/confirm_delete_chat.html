@@ -1,0 +1,33 @@
+{% extends 'store/base.html' %}
+{% block title %}Delete Conversation — JET{% endblock %}
+
+{% block extra_style %}
+.page-header { background: var(--jet-black); color: #fff; padding: 32px 0; }
+.page-header h1 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.jet-card { background: #fff; border-radius: 14px; border: 1px solid var(--jet-border); padding: 32px; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="max-width:600px">
+    <h1>🗑️ Delete Conversation</h1>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:600px">
+  <div class="jet-card text-center">
+    <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+    <h4 style="font-family:var(--font-display);font-weight:800">Are you sure?</h4>
+    <p style="color:var(--jet-muted);margin-top:8px;font-size:0.9rem">
+      You are about to delete the entire conversation about <strong>"{{ room.product.name }}"</strong> with <strong>{{ room.buyer.username if request.user != room.buyer else room.seller.username }}</strong>. All messages will be permanently deleted.
+    </p>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="d-flex gap-3 mt-4">
+        <a href="{% url 'chat_room' room.id %}" class="btn-jet-outline" style="text-decoration:none;flex:1;padding:12px;text-align:center">← Go Back</a>
+        <button type="submit" style="flex:1;padding:12px;background:#c62828;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">Yes, Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

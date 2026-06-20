@@ -1,21 +1,17 @@
 from pathlib import Path
+import os
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-this-key'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me')
 
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# Razorpay
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
 
-# =========================
-# APPLICATIONS
-# =========================
+# Applications
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,19 +19,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # third-party
     'channels',
-
-    # your apps
     'store',
     'cart',
-    'products',
 ]
 
-# =========================
-# MIDDLEWARE
-# =========================
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -46,18 +35,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'ecommerce.urls'
 
-# =========================
-# TEMPLATES
-# =========================
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -66,15 +55,12 @@ TEMPLATES = [
     },
 ]
 
-# =========================
-# WSGI / ASGI
-# =========================
-WSGI_APPLICATION = 'ecommerce.wsgi.application'
+
+# ASGI application (replaces WSGI for WebSocket support)
 ASGI_APPLICATION = 'ecommerce.asgi.application'
 
-# =========================
-# DATABASE
-# =========================
+
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -82,40 +68,47 @@ DATABASES = {
     }
 }
 
-# =========================
-# PASSWORD VALIDATION
-# =========================
-AUTH_PASSWORD_VALIDATORS = []
 
-# =========================
-# INTERNATIONALIZATION
-# =========================
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+
+# Internationalization
 LANGUAGE_CODE = 'en-us'
+
 TIME_ZONE = 'Asia/Kolkata'
+
 USE_I18N = True
 USE_TZ = True
 
-# =========================
-# STATIC FILES
-# =========================
-STATIC_URL = 'static/'
 
-# =========================
-# MEDIA FILES
-# =========================
+# Static files
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# =========================
-# DEFAULT PRIMARY KEY
-# =========================
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# =========================
-# CHANNEL LAYERS
-# =========================
+
+# Channel Layers — In-Memory (no Redis needed)
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+
+# Razorpay
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')

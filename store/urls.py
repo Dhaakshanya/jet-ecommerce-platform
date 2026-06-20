@@ -37,14 +37,17 @@ urlpatterns = [
 
     # Checkout
     path('checkout/',                          views.checkout,           name='checkout'),
+    path('buy-now/<int:product_id>/',          views.buy_now,            name='buy_now'),
     path('order/confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
     path('order/payment/<int:order_id>/',      views.razorpay_payment,   name='razorpay_payment'),
     path('order/payment/verify/<int:order_id>/', views.verify_payment,    name='verify_payment'),
 
     # Chat
-    path('chat/start/<slug:slug>/',  views.start_chat,  name='start_chat'),
-    path('chat/room/<int:room_id>/', views.chat_room,   name='chat_room'),
-    path('chat/inbox/',              views.chat_inbox,  name='chat_inbox'),
+    path('chat/start/<slug:slug>/',               views.start_chat,          name='start_chat'),
+    path('chat/room/<int:room_id>/',              views.chat_room,           name='chat_room'),
+    path('chat/inbox/',                           views.chat_inbox,          name='chat_inbox'),
+    path('chat/message/delete/<int:message_id>/', views.delete_chat_message, name='delete_chat_message'),
+    path('chat/room/delete/<int:room_id>/',       views.delete_chat_room,    name='delete_chat_room'),
 
     # Admin Analytics
     path('admin-analytics/', views.admin_analytics, name='admin_analytics'),

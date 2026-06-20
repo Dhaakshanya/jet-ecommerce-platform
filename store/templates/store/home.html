@@ -1,216 +1,487 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JET — Shop</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    :root { --myntra-pink: #ff3f6c; --myntra-dark: #282c3f; --myntra-gray: #f5f5f6; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--myntra-gray); color: #424553; }
-    .navbar { background: #fff !important; border-bottom: 1px solid #eee; }
-    .navbar-brand { font-weight: 900; font-size: 1.6rem; color: var(--myntra-pink) !important; letter-spacing: 2px; }
-    .nav-link { color: var(--myntra-dark) !important; font-weight: 600; font-size: 0.9rem; }
-    .nav-link:hover { color: var(--myntra-pink) !important; }
-    .btn-myntra { background: var(--myntra-pink); color: #fff; border: none; border-radius: 4px; font-weight: 700; }
-    .btn-myntra:hover { background: #e0355f; color: #fff; }
-    .btn-outline-myntra { border: 1px solid var(--myntra-pink); color: var(--myntra-pink); background: #fff; font-weight: 700; border-radius: 4px; }
-    .btn-outline-myntra:hover { background: var(--myntra-pink); color: #fff; }
-    .hero-banner { background: linear-gradient(120deg, #ff3f6c 0%, #ff7043 100%); color: #fff; padding: 40px 0 30px; }
-    .hero-banner h1 { font-weight: 900; font-size: 2.2rem; }
-    .search-bar { background: #fff; border-radius: 30px; padding: 6px 6px 6px 20px; display: flex; align-items: center; max-width: 500px; margin: 16px auto 0; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-    .search-bar input { border: none; outline: none; flex: 1; font-size: 0.95rem; }
-    .search-bar button { background: var(--myntra-pink); color: #fff; border: none; border-radius: 20px; padding: 6px 18px; font-weight: 700; }
-    .category-bar { background: #fff; border-bottom: 1px solid #eee; padding: 10px 0; }
-    .cat-pill { display: inline-block; padding: 6px 18px; border-radius: 20px; font-size: 0.83rem; font-weight: 600; border: 1.5px solid #eee; color: var(--myntra-dark); background: #fff; text-decoration: none; transition: all 0.15s; margin: 3px; }
-    .cat-pill:hover, .cat-pill.active { background: var(--myntra-pink); color: #fff; border-color: var(--myntra-pink); }
-    .filter-bar { background: #fff; border-bottom: 1px solid #eee; padding: 10px 0; }
-    .product-card { background: #fff; border: none; border-radius: 8px; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
-    .product-card:hover { box-shadow: 0 8px 24px rgba(255,63,108,0.13); transform: translateY(-3px); }
-    .product-img { height: 220px; object-fit: cover; width: 100%; }
-    .product-img-placeholder { height: 220px; display: flex; align-items: center; justify-content: center; background: #f5f5f6; }
-    .brand-tag { font-size: 0.78rem; font-weight: 700; color: var(--myntra-dark); text-transform: uppercase; }
-    .product-name { font-size: 0.88rem; color: #777; margin-bottom: 4px; }
-    .product-price { font-size: 1rem; font-weight: 700; color: var(--myntra-dark); }
-    .badge-cat { background: #fff0f3; color: var(--myntra-pink); font-size: 0.72rem; font-weight: 700; border-radius: 3px; padding: 2px 7px; }
-    .wishlist-btn { position: absolute; top: 10px; right: 10px; background: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: #ccc; z-index: 1; }
-    .wishlist-btn:hover { color: var(--myntra-pink); }
-    footer { background: var(--myntra-dark); color: #aaa; }
-    footer a { color: #aaa; text-decoration: none; }
-    footer a:hover { color: var(--myntra-pink); }
-  </style>
-</head>
-<body>
+{% extends 'store/base.html' %}
+{% block title %}JET. — Discover & Shop{% endblock %}
+{% block search_value %}{{ query }}{% endblock %}
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top shadow-sm">
-  <div class="container">
-    <a class="navbar-brand" href="{% url 'home' %}">JET</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav mx-auto gap-3">
-        {% for category in categories %}
-        <li class="nav-item">
-          <a class="nav-link {% if selected_category == category.slug %}text-danger{% endif %}" href="?category={{ category.slug }}">{{ category.name|upper }}</a>
-        </li>
-        {% endfor %}
-      </ul>
-      <ul class="navbar-nav ms-auto align-items-center gap-2">
-        {% if user.is_authenticated %}
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle fw-semibold" href="#" data-bs-toggle="dropdown" style="color:var(--myntra-pink)">
-              Hi, {{ user.username }}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="{% url 'buyer_dashboard' %}"><i class="bi bi-person"></i> My Dashboard</a></li>
-              {% if user.profile.is_producer %}
-                <li><a class="dropdown-item" href="{% url 'producer_dashboard' %}"><i class="bi bi-shop"></i> Producer Dashboard</a></li>
-              {% else %}
-                <li><a class="dropdown-item" href="{% url 'become_producer' %}"><i class="bi bi-plus-circle"></i> Start Selling</a></li>
-              {% endif %}
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'wishlist_page' %}"><i class="bi bi-heart"></i> Wishlist</a></li>
-              <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-            </ul>
-          </li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'wishlist_page' %}"><i class="bi bi-heart"></i></a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'cart_page' %}"><i class="bi bi-bag"></i> Bag</a></li>
-        {% else %}
-          <li class="nav-item"><a class="btn btn-outline-myntra btn-sm px-3 me-1" href="{% url 'login' %}">Login</a></li>
-          <li class="nav-item"><a class="btn btn-myntra btn-sm px-3" href="{% url 'register' %}">Register</a></li>
-        {% endif %}
-      </ul>
+{% block extra_style %}
+
+.jet-hero {
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: #080810;
+}
+
+/* Subtle dark gradient base */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 50%, rgba(255,59,92,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 10% 80%, rgba(255,59,92,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(15,15,30,1) 0%, #080810 100%);
+  pointer-events: none;
+}
+
+/* Single clean glow — subtle, not clashing */
+.hero-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,59,92,0.12) 0%, transparent 70%);
+  top: 50%;
+  left: 55%;
+  transform: translate(-50%, -50%);
+  filter: blur(60px);
+  animation: glowPulse 6s ease infinite;
+  pointer-events: none;
+}
+@keyframes glowPulse {
+  0%,100% { opacity:0.6; transform:translate(-50%,-50%) scale(1); }
+  50%      { opacity:1;   transform:translate(-50%,-50%) scale(1.1); }
+}
+
+/* Particle canvas */
+#particleCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+/* Thin grid lines (subtle, like Linear) */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+}
+
+/* Gradient text */
+.hero-gradient-text {
+  background: linear-gradient(135deg, #ff3b5c 0%, #ff6b35 50%, #ff8c00 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+}
+
+.hero-content { position: relative; z-index: 3; padding: 90px 0 80px; }
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.8rem, 5.5vw, 5rem);
+  letter-spacing: -3px;
+  line-height: 1.02;
+  color: #fff;
+}
+.hero-sub {
+  color: rgba(255,255,255,0.45);
+  font-size: 1rem;
+  margin-top: 20px;
+  max-width: 440px;
+  line-height: 1.7;
+}
+
+/* Clean glass stat cards */
+.hero-stats { display: flex; gap: 12px; margin-top: 40px; flex-wrap: wrap; }
+.hero-stat-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 14px 20px;
+  min-width: 100px;
+  transition: all 0.3s ease;
+}
+.hero-stat-card:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,59,92,0.3);
+  transform: translateY(-3px);
+}
+.hero-stat-num { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #fff; }
+.hero-stat-label { font-size: 0.68rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* Floating glass product cards — cleaner */
+.hero-preview { position: relative; height: 420px; }
+.hero-preview-card {
+  position: absolute;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  transition: transform 0.3s ease;
+}
+.hero-preview-card:nth-child(1) { width:195px;height:250px;left:22%;top:0; animation:float 7s ease infinite; }
+.hero-preview-card:nth-child(2) { width:170px;height:215px;right:5%;top:90px; animation:float 9s ease infinite; animation-delay:-3s; }
+.hero-preview-card:nth-child(3) { width:150px;height:190px;left:5%;bottom:20px; animation:float 8s ease infinite; animation-delay:-5s; }
+.hero-preview-card img { width:100%;height:68%;object-fit:cover;opacity:0.9; }
+.hero-preview-card-body { padding:10px 12px; }
+.hero-preview-card-name { font-size:0.77rem;font-weight:600;color:rgba(255,255,255,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.hero-preview-card-price { font-family:var(--font-display);font-size:0.88rem;font-weight:700;color:var(--jet-accent);margin-top:2px; }
+
+/* ── Category bar ── */
+.cat-bar { background:#fff;border-bottom:1px solid var(--jet-border);padding:12px 0;overflow-x:auto;white-space:nowrap;scrollbar-width:none; }
+.cat-bar::-webkit-scrollbar { display:none; }
+.cat-pill { display:inline-block;padding:6px 18px;border-radius:100px;font-size:0.82rem;font-weight:600;border:1.5px solid var(--jet-border);color:#555;background:#fff;text-decoration:none;transition:all 0.2s;margin:0 3px; }
+.cat-pill:hover { border-color:var(--jet-accent);color:var(--jet-accent);transform:translateY(-1px); }
+.cat-pill.active { background:var(--jet-black);color:#fff;border-color:var(--jet-black); }
+
+/* ── Filter bar ── */
+.filter-bar { background:#fff;border-bottom:1px solid var(--jet-border);padding:10px 0; }
+
+/* ── Product grid ── */
+.product-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px; }
+.product-card { background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--jet-border);cursor:pointer;position:relative;transition:box-shadow 0.25s ease,transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+.product-card:hover { box-shadow:0 16px 48px rgba(0,0,0,0.12); }
+.product-img-wrap { overflow:hidden;height:210px;position:relative; }
+.product-img { width:100%;height:100%;object-fit:cover;transition:transform 0.5s cubic-bezier(0.22,1,0.36,1); }
+.product-card:hover .product-img { transform:scale(1.06); }
+.product-img-placeholder { height:210px;display:flex;align-items:center;justify-content:center;background:var(--jet-gray); }
+.product-shine { position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15) 0%,transparent 55%);opacity:0;transition:opacity 0.3s ease;pointer-events:none; }
+.product-card:hover .product-shine { opacity:1; }
+.product-body { padding:12px 14px 10px; }
+.product-cat { font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--jet-accent); }
+.product-name { font-weight:600;font-size:0.9rem;margin:4px 0 2px;color:var(--jet-black);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.product-price { font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--jet-black); }
+.star-display { color:#ffb400;font-size:0.75rem; }
+.btn-view { display:block;margin:10px 14px 14px;padding:8px;background:var(--jet-black);color:#fff;border-radius:8px;text-align:center;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;width:calc(100% - 28px);transition:background 0.15s,transform 0.15s; }
+.btn-view:hover { background:var(--jet-accent);color:#fff;transform:translateY(-1px); }
+{% endblock %}
+
+{% block content %}
+
+<section class="jet-hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="container hero-content" style="max-width:1400px">
+    <div class="row align-items-center g-5">
+
+      <!-- Left content -->
+      <div class="col-lg-6" style="animation:fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) both">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,59,92,0.1);border:1px solid rgba(255,59,92,0.2);border-radius:100px;padding:5px 14px;margin-bottom:24px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--jet-accent);animation:glowPulse 2s ease infinite;display:inline-block"></span>
+          <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,0.6)">JET Marketplace 2026</span>
+        </div>
+        <h1 class="hero-title">
+          The modern<br>
+          marketplace<br>
+          for <span class="hero-gradient-text">everything.</span>
+        </h1>
+        <p class="hero-sub">Buy, sell, and discover — all in one place. Thousands of products, one platform built for you.</p>
+
+        <div class="hero-stats">
+          <div class="hero-stat-card">
+            <div class="hero-stat-num">{{ products|length }}+</div>
+            <div class="hero-stat-label">Products</div>
+          </div>
+          <div class="hero-stat-card">
+            <div class="hero-stat-num">{{ categories|length }}</div>
+            <div class="hero-stat-label">Categories</div>
+          </div>
+          <div class="hero-stat-card">
+            <div class="hero-stat-num">100%</div>
+            <div class="hero-stat-label">Secure</div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-3 mt-5 flex-wrap" style="animation:fadeUp 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both">
+          <a href="#products" class="btn-jet" style="text-decoration:none;display:inline-block;padding:12px 28px;font-size:0.95rem">
+            Shop Now <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+          {% if user.is_authenticated and not user.profile.is_producer %}
+          <a href="{% url 'become_producer' %}" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-weight:600;font-size:0.88rem;backdrop-filter:blur(8px);transition:all 0.25s">
+            Start Selling <i class="bi bi-arrow-right"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right: floating cards -->
+      <div class="col-lg-6 d-none d-lg-block" style="animation:fadeIn 1s 0.3s ease both">
+        <div class="hero-preview">
+          {% for product in products|slice:":3" %}
+          <div class="hero-preview-card">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+            <div style="height:68%;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center"><i class="bi bi-image" style="color:rgba(255,255,255,0.15);font-size:2rem"></i></div>
+            {% endif %}
+            <div class="hero-preview-card-body">
+              <div class="hero-preview-card-name">{{ product.name }}</div>
+              <div class="hero-preview-card-price">₹{{ product.price }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
   </div>
-</nav>
+</section>
 
-<!-- Hero + Search -->
-<div class="hero-banner">
-  <div class="container text-center">
-    <h1>NEW ARRIVALS ARE HERE</h1>
-    <p style="opacity:0.9">Discover the latest trends across fashion, electronics & more</p>
-    <form method="GET" action="{% url 'home' %}" class="search-bar">
-      <input type="text" name="q" placeholder="Search products, brands and more..." value="{{ query }}">
-      <button type="submit"><i class="bi bi-search"></i> Search</button>
-    </form>
-  </div>
-</div>
-
-<!-- Category Bar -->
-<div class="category-bar">
-  <div class="container text-center">
-    <a href="{% url 'home' %}" class="cat-pill {% if not selected_category %}active{% endif %}">All</a>
+<!-- CATEGORY BAR -->
+<div class="cat-bar">
+  <div style="max-width:1400px;margin:0 auto;padding:0 24px">
+    <a href="{% url 'home' %}" class="cat-pill {% if not selected_category %}active{% endif %}">✦ All</a>
     {% for category in categories %}
     <a href="?category={{ category.slug }}" class="cat-pill {% if selected_category == category.slug %}active{% endif %}">{{ category.name }}</a>
     {% endfor %}
   </div>
 </div>
 
-<!-- Filter Bar -->
+<!-- FILTER BAR -->
 <div class="filter-bar">
-  <div class="container">
+  <div style="max-width:1400px;margin:0 auto;padding:0 24px">
     <form method="GET" action="{% url 'home' %}" class="d-flex flex-wrap align-items-center gap-3">
       {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
       {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
       <div class="d-flex align-items-center gap-2">
-        <label class="small fw-bold">Price:</label>
-        <input type="number" name="min_price" placeholder="Min ₹" value="{{ min_price }}" class="form-control form-control-sm" style="width:90px">
-        <span class="small">—</span>
-        <input type="number" name="max_price" placeholder="Max ₹" value="{{ max_price }}" class="form-control form-control-sm" style="width:90px">
+        <label class="small fw-bold text-muted">Price:</label>
+        <input type="number" name="min_price" placeholder="Min ₹" value="{{ min_price }}" class="form-control form-control-sm" style="width:85px;border-radius:8px">
+        <span class="small text-muted">—</span>
+        <input type="number" name="max_price" placeholder="Max ₹" value="{{ max_price }}" class="form-control form-control-sm" style="width:85px;border-radius:8px">
       </div>
-      <div class="d-flex align-items-center gap-2">
-        <label class="small fw-bold">Sort:</label>
-        <select name="sort" class="form-select form-select-sm" style="width:150px">
-          <option value="" {% if not sort %}selected{% endif %}>Default</option>
-          <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
-          <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
-          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-myntra btn-sm px-3">Apply</button>
-      <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm px-3">Clear</a>
+      <select name="sort" class="form-select form-select-sm" style="width:170px;border-radius:8px">
+        <option value="" {% if not sort %}selected{% endif %}>Sort: Default</option>
+        <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low → High</option>
+        <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Top Rated</option>
+      </select>
+      <button type="submit" class="btn-jet" style="padding:6px 16px;font-size:0.83rem">Apply</button>
+      <a href="{% url 'home' %}" class="btn-jet-outline" style="padding:5px 16px;font-size:0.83rem;text-decoration:none">Clear</a>
     </form>
   </div>
 </div>
 
-<!-- Products -->
-<div class="container py-4" id="products">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h6 class="fw-bold mb-0" style="color:var(--myntra-dark)">
-      {{ products|length }} Products
-      {% if query %} for "{{ query }}"{% endif %}
-      {% if selected_category %}— {{ selected_category|title }}{% endif %}
-    </h6>
+<!-- PRODUCTS -->
+<div style="max-width:1400px;margin:0 auto;padding:32px 24px" id="products">
+  <div class="d-flex justify-content-between align-items-center mb-4 reveal">
+    <h5 style="font-family:var(--font-display);font-weight:700;margin:0">
+      {% if query %}Results for "{{ query }}"{% elif selected_category %}{{ selected_category|title }}{% else %}All Products{% endif %}
+      <span style="font-size:0.85rem;font-weight:400;color:var(--jet-muted);margin-left:8px">({{ products|length }})</span>
+    </h5>
   </div>
 
   {% if products %}
-  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+  <div class="product-grid">
     {% for product in products %}
-    <div class="col">
-      <div class="card product-card h-100 position-relative">
-        <button class="wishlist-btn"><i class="bi bi-heart"></i></button>
-        {% if product.image %}
-          <img src="{{ product.image.url }}" class="product-img" alt="{{ product.name }}">
-        {% else %}
-          <div class="product-img-placeholder">
-            <i class="bi bi-image" style="font-size:2.5rem;color:#ccc"></i>
-          </div>
-        {% endif %}
-        <div class="card-body p-2">
-          <span class="badge-cat">{{ product.category.name }}</span>
-          <div class="brand-tag mt-1">JET</div>
-          <div class="product-name">{{ product.name }}</div>
-          <div class="product-price">₹{{ product.price }}</div>
-          <a href="{% url 'product_detail' product.slug %}" class="btn btn-myntra btn-sm w-100 mt-1">View</a>
+    <div class="product-card tilt-card reveal" style="transition-delay:{{ forloop.counter0 }}00ms">
+      <a href="{% url 'product_detail' product.slug %}" style="text-decoration:none;color:inherit">
+        <div class="product-img-wrap">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="product-img" alt="{{ product.name }}" id="prod-img-{{ product.id }}">
+          {% else %}
+            <div class="product-img-placeholder"><i class="bi bi-image" style="font-size:2.5rem;color:#ccc"></i></div>
+          {% endif %}
+          <div class="product-shine"></div>
         </div>
-      </div>
+        <div class="product-body">
+          <div class="product-cat">{{ product.category.name }}</div>
+          <div class="product-name">{{ product.name }}</div>
+          {% if product.average_rating %}
+          <div class="star-display">
+            {% for i in "12345" %}{% if forloop.counter <= product.average_rating %}★{% else %}☆{% endif %}{% endfor %}
+            <span style="font-size:0.7rem;color:var(--jet-muted);margin-left:2px">({{ product.review_count }})</span>
+          </div>
+          {% endif %}
+          <div class="product-price">₹{{ product.price }}</div>
+        </div>
+      </a>
+      <button onclick="handleAddToCart(event, {{ product.id }}, 'prod-img-{{ product.id }}')" class="btn-view">
+        <i class="bi bi-bag-plus me-1"></i> Add to Bag
+      </button>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="text-center py-5">
-    <i class="bi bi-search" style="font-size:3rem;color:#ccc"></i>
-    <p class="mt-3 text-muted">No products found{% if query %} for "{{ query }}"{% endif %}.</p>
-    <a href="{% url 'home' %}" class="btn btn-myntra">View All Products</a>
+  <div class="text-center py-5 reveal">
+    <div style="font-size:3rem">🔍</div>
+    <h5 style="font-family:var(--font-display);margin-top:16px">No products found</h5>
+    <p class="text-muted">Try adjusting your filters or search term</p>
+    <a href="{% url 'home' %}" class="btn-jet" style="text-decoration:none;display:inline-block;margin-top:8px">Clear Filters</a>
   </div>
   {% endif %}
 </div>
 
-<!-- Footer -->
-<footer class="py-4 mt-5">
-  <div class="container">
-    <div class="row text-center text-md-start">
-      <div class="col-md-3 mb-3">
-        <h6 class="text-white fw-bold">JET</h6>
-        <small>Your one-stop fashion & lifestyle destination.</small>
-      </div>
-      <div class="col-md-3 mb-3">
-        <h6 class="text-white fw-bold">ONLINE SHOPPING</h6>
-        <div><a href="#">Men</a></div>
-        <div><a href="#">Women</a></div>
-        <div><a href="#">Electronics</a></div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <h6 class="text-white fw-bold">CUSTOMER POLICIES</h6>
-        <div><a href="#">Contact Us</a></div>
-        <div><a href="#">Return Policy</a></div>
-        <div><a href="#">Terms of Use</a></div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <h6 class="text-white fw-bold">FOLLOW US</h6>
-        <div><a href="#"><i class="bi bi-instagram"></i> Instagram</a></div>
-        <div><a href="#"><i class="bi bi-twitter"></i> Twitter</a></div>
-        <div><a href="#"><i class="bi bi-facebook"></i> Facebook</a></div>
-      </div>
-    </div>
-    <hr style="border-color:#444">
-    <p class="text-center mb-0 small">© 2026 JET. All rights reserved.</p>
-  </div>
-</footer>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% block extra_script %}
+<script>
+// ══════════════════════════════════════
+//  CLEAN PARTICLE NETWORK
+// ══════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  let mouse = { x: null, y: null };
+  const COUNT = 55;
+  const MAX_DIST = 130;
+  const MOUSE_RADIUS = 150;
+
+  function resize() {
+    const hero = canvas.closest('.jet-hero');
+    W = canvas.width = hero.offsetWidth;
+    H = canvas.height = hero.offsetHeight;
+  }
+
+  class Particle {
+    constructor() { this.reset(true); }
+    reset(initial) {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = (Math.random() - 0.5) * 0.4;
+      this.r = Math.random() * 1.5 + 0.5;
+      this.baseAlpha = Math.random() * 0.3 + 0.1;
+      this.alpha = this.baseAlpha;
+    }
+    update() {
+      if (mouse.x !== null) {
+        const dx = this.x - mouse.x;
+        const dy = this.y - mouse.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < MOUSE_RADIUS) {
+          const f = (MOUSE_RADIUS - d) / MOUSE_RADIUS * 0.5;
+          this.vx += (dx / d) * f;
+          this.vy += (dy / d) * f;
+        }
+      }
+      this.vx *= 0.97; this.vy *= 0.97;
+      this.x += this.vx; this.y += this.vy;
+      if (this.x < 0) this.x = W;
+      if (this.x > W) this.x = 0;
+      if (this.y < 0) this.y = H;
+      if (this.y > H) this.y = 0;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+      ctx.fill();
+    }
+  }
+
+  function drawLines() {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < MAX_DIST) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(255,255,255,${(1 - d/MAX_DIST) * 0.12})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+      if (mouse.x !== null) {
+        const dx = particles[i].x - mouse.x;
+        const dy = particles[i].y - mouse.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < MOUSE_RADIUS) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(255,59,92,${(1 - d/MOUSE_RADIUS) * 0.4})`;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawLines();
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  particles = Array.from({ length: COUNT }, () => new Particle());
+
+  const hero = canvas.closest('.jet-hero');
+  hero?.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  });
+  hero?.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+
+  animate();
+})();
+
+// ══════════════════════════════════════
+//  FLYING ADD-TO-CART
+// ══════════════════════════════════════
+function handleAddToCart(e, productId, imgId) {
+  e.preventDefault();
+  const imgEl = document.getElementById(imgId);
+  const btn = e.currentTarget;
+  btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Added!';
+  btn.style.background = '#2e7d32';
+  if (imgEl && window.flyToCart) {
+    flyToCart(imgEl, () => submitCartForm(productId));
+  } else {
+    submitCartForm(productId);
+  }
+  setTimeout(() => {
+    btn.innerHTML = '<i class="bi bi-bag-plus me-1"></i> Add to Bag';
+    btn.style.background = '';
+  }, 1600);
+}
+
+function submitCartForm(productId) {
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = '/cart/add/' + productId + '/';
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+  const qty = document.createElement('input');
+  qty.type = 'hidden'; qty.name = 'quantity'; qty.value = '1';
+  f.appendChild(csrf); f.appendChild(qty);
+  document.body.appendChild(f); f.submit();
+}
+
+// 3D tilt
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tilt-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = `perspective(700px) rotateY(${x*8}deg) rotateX(${-y*8}deg) scale(1.02)`;
+      card.style.boxShadow = `${-x*20}px ${-y*20}px 40px rgba(0,0,0,0.15)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      card.style.boxShadow = '';
+    });
+  });
+});
+</script>
+{% endblock %}
+HTMLEOF

@@ -9,7 +9,7 @@ from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
-from .models import Profile, Product, Category, Wishlist, Order, OrderItem, OrderTracking, ShippingAddress, CancelReturnRequest, Review, ProductImage, ReviewImage, ChatRoom, ChatMessage
+from .models import Profile, Product, Category, Wishlist, Order, OrderItem, OrderTracking, ShippingAddress, CancelReturnRequest, Review, ProductImage, ReviewImage, ChatRoom, ChatMessage, DeletedMessage
 from cart.models import Cart
 from django.conf import settings
 import razorpay
@@ -254,17 +254,32 @@ def producer_dashboard(request):
     order_items = OrderItem.objects.filter(product__producer=request.user)
     total_sales = sum(item.quantity for item in order_items)
     total_revenue = sum(item.subtotal for item in order_items)
-    recent_orders = order_items.order_by('-order__created_at')[:10]
+    # Separate orders by status
+    active_order_items = order_items.filter(
+        order__status__in=['pending', 'processing', 'shipped']
+    ).order_by('-order__created_at')
+
+    delivered_order_items = order_items.filter(
+        order__status='delivered'
+    ).order_by('-order__created_at')[:20]
+
+    cancelled_order_items = order_items.filter(
+        order__status='cancelled'
+    ).order_by('-order__created_at')[:20]
+
     cancel_return_requests = CancelReturnRequest.objects.filter(
         order__items__product__producer=request.user,
         status='pending'
     ).distinct().order_by('-created_at')
+
     return render(request, 'store/producer_dashboard.html', {
         'products': products,
         'total_products': total_products,
         'total_sales': total_sales,
         'total_revenue': total_revenue,
-        'order_items': recent_orders,
+        'active_order_items': active_order_items,
+        'delivered_order_items': delivered_order_items,
+        'cancelled_order_items': cancelled_order_items,
         'cancel_return_requests': cancel_return_requests,
     })
 
@@ -408,11 +423,25 @@ def handle_cancel_return(request, request_id):
 
 @login_required(login_url='login')
 def checkout(request):
-    cart_items = Cart.objects.filter(user=request.user).select_related('product')
-    if not cart_items:
-        messages.error(request, 'Your cart is empty!')
-        return redirect('cart_page')
-    total = sum(item.subtotal for item in cart_items)
+    buy_now_product_id = request.session.get('buy_now_product_id')
+    buy_now_quantity = request.session.get('buy_now_quantity', 1)
+
+    if buy_now_product_id:
+        # Buy Now flow — single product, not from cart
+        product = get_object_or_404(Product, id=buy_now_product_id)
+        cart_items = None
+        checkout_items = [{'product': product, 'quantity': buy_now_quantity, 'subtotal': product.price * buy_now_quantity}]
+        total = product.price * buy_now_quantity
+        is_buy_now = True
+    else:
+        cart_items = Cart.objects.filter(user=request.user).select_related('product')
+        if not cart_items:
+            messages.error(request, 'Your cart is empty!')
+            return redirect('cart_page')
+        checkout_items = [{'product': item.product, 'quantity': item.quantity, 'subtotal': item.subtotal} for item in cart_items]
+        total = sum(item.subtotal for item in cart_items)
+        is_buy_now = False
+
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '').strip()
         address   = request.POST.get('address', '').strip()
@@ -429,10 +458,10 @@ def checkout(request):
                 status='pending',
                 is_complete=(payment == 'cod'),  # COD orders are immediately confirmed
             )
-            for item in cart_items:
+            for item in checkout_items:
                 OrderItem.objects.create(
-                    order=order, product=item.product,
-                    quantity=item.quantity, price=item.product.price,
+                    order=order, product=item['product'],
+                    quantity=item['quantity'], price=item['product'].price,
                 )
             ShippingAddress.objects.create(
                 order=order, full_name=full_name, address=address,
@@ -443,11 +472,38 @@ def checkout(request):
                 status='pending',
                 message='Order placed successfully. Waiting for seller confirmation.',
             )
-            cart_items.delete()
+
+            if is_buy_now:
+                # Clear buy now session data
+                request.session.pop('buy_now_product_id', None)
+                request.session.pop('buy_now_quantity', None)
+            else:
+                cart_items.delete()
+
             if payment == 'razorpay':
                 return redirect('razorpay_payment', order_id=order.id)
             return redirect('order_confirmation', order_id=order.id)
-    return render(request, 'store/checkout.html', {'cart_items': cart_items, 'total': total})
+
+    return render(request, 'store/checkout.html', {
+        'cart_items': checkout_items, 'total': total, 'is_buy_now': is_buy_now,
+    })
+
+
+@login_required(login_url='login')
+def buy_now(request, product_id):
+    """Skip the cart entirely — go straight to checkout for one product."""
+    product = get_object_or_404(Product, id=product_id)
+    quantity = int(request.POST.get('quantity', 1)) if request.method == 'POST' else 1
+
+    if not product.in_stock:
+        messages.error(request, f'"{product.name}" is out of stock.')
+        return redirect('product_detail', slug=product.slug)
+
+    request.session['buy_now_product_id'] = product.id
+    request.session['buy_now_quantity'] = quantity
+    request.session.modified = True
+    request.session.save()
+    return redirect('checkout')
 
 
 @login_required(login_url='login')
@@ -842,7 +898,11 @@ def chat_room(request, room_id):
         messages.error(request, 'You do not have access to this chat.')
         return redirect('home')
 
-    chat_messages = room.messages.select_related('sender')
+    # Get messages excluding ones this user deleted for themselves
+    deleted_ids = DeletedMessage.objects.filter(
+        user=request.user
+    ).values_list('message_id', flat=True)
+    chat_messages = room.messages.select_related('sender').exclude(id__in=deleted_ids)
     # Mark messages from the other person as read
     room.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
@@ -873,3 +933,44 @@ def chat_inbox(request):
     rooms_data.sort(key=lambda r: r['room'].messages.last().timestamp if r['room'].messages.exists() else r['room'].created_at, reverse=True)
 
     return render(request, 'store/chat_inbox.html', {'rooms_data': rooms_data})
+
+
+@login_required(login_url='login')
+def delete_chat_message(request, message_id):
+    """Delete a message for me only, or for everyone."""
+    msg = get_object_or_404(ChatMessage, id=message_id)
+    room = msg.room
+
+    if request.user != room.buyer and request.user != room.seller:
+        messages.error(request, 'You do not have permission.')
+        return redirect('chat_room', room_id=room.id)
+
+    if request.method == 'POST':
+        delete_type = request.POST.get('delete_type', 'me')
+        if delete_type == 'everyone':
+            # Hard delete — removes for both sides
+            msg.delete()
+            messages.success(request, 'Message deleted for everyone.')
+        else:
+            # Soft delete — only hides for current user
+            DeletedMessage.objects.get_or_create(message=msg, user=request.user)
+            messages.success(request, 'Message deleted for you.')
+
+    return redirect('chat_room', room_id=room.id)
+
+
+@login_required(login_url='login')
+def delete_chat_room(request, room_id):
+    """Delete entire conversation — only buyer or seller can do this."""
+    room = get_object_or_404(ChatRoom, id=room_id)
+
+    if request.user != room.buyer and request.user != room.seller:
+        messages.error(request, 'You do not have permission to delete this conversation.')
+        return redirect('chat_inbox')
+
+    if request.method == 'POST':
+        room.delete()
+        messages.success(request, 'Conversation deleted.')
+        return redirect('chat_inbox')
+
+    return render(request, 'store/confirm_delete_chat.html', {'room': room})
