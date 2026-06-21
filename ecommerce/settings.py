@@ -1,17 +1,16 @@
 from pathlib import Path
 import os
+import dj_database_url
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me')
 
-DEBUG = False
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ["jet-ecommerce-platform.onrender.com"]
+ALLOWED_HOSTS = ['*']
 
-
-# Applications
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -24,9 +23,9 @@ INSTALLED_APPS = [
     'cart',
 ]
 
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -35,9 +34,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
 ROOT_URLCONF = 'ecommerce.urls'
-
 
 TEMPLATES = [
     {
@@ -55,21 +52,16 @@ TEMPLATES = [
     },
 ]
 
-
-# ASGI application (replaces WSGI for WebSocket support)
 ASGI_APPLICATION = 'ecommerce.asgi.application'
 
-
-# Database
+# PostgreSQL on Render, SQLite locally
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3'),
+        conn_max_age=600,
+    )
 }
 
-
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -77,29 +69,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# Internationalization
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Asia/Kolkata'
-
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
+# Static files — WhiteNoise serves them on Render
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # Channel Layers — In-Memory (no Redis needed)
 CHANNEL_LAYERS = {
@@ -107,7 +92,6 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
-
 
 # Razorpay
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
